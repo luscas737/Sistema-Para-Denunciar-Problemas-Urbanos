@@ -63,19 +63,24 @@ O que **não** faremos nesta versão, e por quê:
 
 ## 8. Riscos principais
 
-| Risco | O que faremos |
-|---|---|
-| | |
+| Risco                                                  | O que faremos                                                                                              |
+| ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| **Denúncias falsas ou incompletas**                    | Exigir informações mínimas, como descrição, categoria e localização, e permitir o envio de foto.           |
+| **Grande quantidade de denúncias**                     | Organizar as denúncias por categoria, localização e status para facilitar o gerenciamento pela prefeitura. |
+| **Prefeitura não atualizar o status**                  | Criar um fluxo simples de atualização: *recebida → encaminhada → em andamento → resolvida*.                |
 
 ## 9. Critérios de sucesso
 
-| Objetivo | Como mediremos | Meta |
-|---|---|---|
-| | | |
+| Objetivo                                      | Como mediremos                                            | Meta                                                                      |
+| --------------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------- |
+| **Permitir o registro de problemas urbanos**  | Número de denúncias cadastradas com sucesso               | **≥ 90%** dos cadastros concluídos sem erro                               |
+| **Facilitar o gerenciamento pela prefeitura** | Denúncias visualizadas e classificadas pelos responsáveis | **≥ 90%** das denúncias corretamente encaminhadas                         |
+| **Permitir o acompanhamento das denúncias**   | Denúncias com status atualizado                           | **≥ 80%** das denúncias com status atualizado                             |
+| **Garantir facilidade de uso**                | Teste com usuários                                        | **≥ 80%** dos usuários conseguem realizar as tarefas principais sem ajuda |
 
 ## 10. O que fica depois
 
-- **Quem opera o sistema:**
-- **Quem mantém tecnicamente:**
-- **Custo mensal estimado:**
-- **Licença do código:**
+- **Quem opera o sistema: Prefeitura, por meio dos setores responsáveis pelo atendimento das denúncias.**
+- **Quem mantém tecnicamente: Equipe de TI da prefeitura ou empresa/equipe de desenvolvimento contratada.**
+- **Custo mensal estimado: A definir, dependendo da infraestrutura de hospedagem e armazenamento utilizada.**
+- **Licença do código: MIT, permitindo que o código seja utilizado, modificado e redistribuído, mantendo os termos da licença.**
