@@ -9,18 +9,22 @@ if errorlevel 1 (
   exit /b 1
 )
 
-if not exist "backend\node_modules" (
-  echo Instalando dependencias do backend...
-  pushd backend
-  call npm install
-  popd
+if not exist "backend\node_modules\.bin\nest.cmd" (
+  if not exist "backend\node_modules\.bin\nest" (
+    echo Instalando dependencias do backend...
+    pushd backend
+    call npm install
+    popd
+  )
 )
 
-if not exist "frontend\node_modules" (
-  echo Instalando dependencias do frontend...
-  pushd frontend
-  call npm install
-  popd
+if not exist "frontend\node_modules\.bin\next.cmd" (
+  if not exist "frontend\node_modules\.bin\next" (
+    echo Instalando dependencias do frontend...
+    pushd frontend
+    call npm install
+    popd
+  )
 )
 
 echo Iniciando backend em http://localhost:3001/api ...
@@ -28,6 +32,17 @@ start "Backend - API" cmd /k "cd backend && npm run start:dev"
 
 echo Iniciando frontend em http://localhost:3000 ...
 start "Frontend - App" cmd /k "cd frontend && npm run dev"
+
+echo Aguardando o backend responder...
+set /a tentativas=0
+:aguardar_backend
+timeout /t 2 /nobreak >nul
+curl -s -o nul http://localhost:3001/api/denuncias
+if errorlevel 1 (
+  set /a tentativas+=1
+  if !tentativas! lss 60 goto aguardar_backend
+  echo O backend nao respondeu em http://localhost:3001/api. Verifique a janela "Backend - API".
+)
 
 echo Aguardando o frontend responder...
 set /a tentativas=0

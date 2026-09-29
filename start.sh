@@ -8,12 +8,15 @@ if ! command -v npm >/dev/null 2>&1; then
   exit 1
 fi
 
-if [ ! -d backend/node_modules ]; then
+# A pasta node_modules pode existir sem os executaveis em .bin (por exemplo,
+# quando node_modules foi versionado sem a pasta .bin). Por isso a verificacao
+# e feita no binario da CLI, e nao apenas na existencia da pasta.
+if [ ! -x backend/node_modules/.bin/nest ]; then
   echo "Instalando dependencias do backend..."
   (cd backend && npm install)
 fi
 
-if [ ! -d frontend/node_modules ]; then
+if [ ! -x frontend/node_modules/.bin/next ]; then
   echo "Instalando dependencias do frontend..."
   (cd frontend && npm install)
 fi
@@ -32,8 +35,23 @@ cleanup() {
 }
 trap cleanup EXIT
 
+echo "Aguardando o backend responder..."
+backend_ok=0
+for i in $(seq 1 60); do
+  if curl -sf -o /dev/null http://localhost:3001/api/denuncias; then
+    backend_ok=1
+    break
+  fi
+  sleep 2
+done
+
+if [ "$backend_ok" -eq 0 ]; then
+  echo "O backend nao respondeu em http://localhost:3001/api."
+  echo "Verifique as mensagens de erro acima e, se necessario, rode: cd backend && npm install"
+fi
+
 echo "Aguardando o frontend responder..."
-for i in $(seq 1 30); do
+for i in $(seq 1 60); do
   if curl -sf -o /dev/null http://localhost:3000; then
     break
   fi

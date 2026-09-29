@@ -21,20 +21,38 @@ export default function MapaPage() {
   const [denuncias, setDenuncias] = useState<DenunciaResumo[]>([]);
   const [categoria, setCategoria] = useState('');
   const [status, setStatus] = useState('');
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState('');
 
   useEffect(() => {
-    listarDenuncias({ categoria: categoria || undefined, status: status || undefined }).then((todas) => {
-      setDenuncias(
-        todas.map((d) => ({
-          id: d.id,
-          titulo: d.titulo,
-          categoria: d.categoria,
-          status: d.status,
-          latitude: d.latitude,
-          longitude: d.longitude,
-        })),
-      );
-    });
+    let ativo = true;
+    setCarregando(true);
+    setErro('');
+    listarDenuncias({ categoria: categoria || undefined, status: status || undefined })
+      .then((todas) => {
+        if (!ativo) return;
+        setDenuncias(
+          todas.map((d) => ({
+            id: d.id,
+            titulo: d.titulo,
+            categoria: d.categoria,
+            status: d.status,
+            latitude: d.latitude,
+            longitude: d.longitude,
+          })),
+        );
+      })
+      .catch(() => {
+        if (!ativo) return;
+        setDenuncias([]);
+        setErro('Nao foi possivel carregar as denuncias. Verifique se o backend esta em execucao.');
+      })
+      .finally(() => {
+        if (ativo) setCarregando(false);
+      });
+    return () => {
+      ativo = false;
+    };
   }, [categoria, status]);
 
   return (
@@ -69,6 +87,8 @@ export default function MapaPage() {
           ))}
         </select>
       </div>
+      {carregando && <p className="text-slate-500">Carregando denuncias...</p>}
+      {erro && <p className="text-red-600">{erro}</p>}
       <Mapa denuncias={denuncias} />
       <div className="flex flex-wrap gap-4 text-xs text-slate-600">
         {Object.entries(coresCategorias).map(([valor, cor]) => (

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import {
   Denuncia,
   DenunciaFormData,
@@ -12,6 +13,11 @@ import {
   denunciaSchema,
   statusLista,
 } from '@/lib/denuncias';
+
+const MapaSelecao = dynamic(() => import('./MapaSelecao'), {
+  ssr: false,
+  loading: () => <div className="h-72 w-full bg-slate-200 rounded-xl animate-pulse" />,
+});
 
 type Erros = Partial<Record<keyof DenunciaFormData | 'form', string>>;
 
@@ -29,19 +35,43 @@ export default function DenunciaForm({ denuncia }: { denuncia?: Denuncia }) {
   const [erros, setErros] = useState<Erros>({});
   const [salvando, setSalvando] = useState(false);
 
+  const latitudeNumero = Number(form.latitude);
+  const longitudeNumero = Number(form.longitude);
+  const coordenadasValidas =
+    form.latitude.trim() !== '' &&
+    form.longitude.trim() !== '' &&
+    Number.isFinite(latitudeNumero) &&
+    Number.isFinite(longitudeNumero) &&
+    Math.abs(latitudeNumero) <= 90 &&
+    Math.abs(longitudeNumero) <= 180;
+
   function setCampo(campo: string, valor: string) {
     setForm((f) => ({ ...f, [campo]: valor }));
   }
 
+  function selecionarNoMapa(novaLatitude: number, novaLongitude: number) {
+    setForm((f) => ({
+      ...f,
+      latitude: novaLatitude.toFixed(6),
+      longitude: novaLongitude.toFixed(6),
+    }));
+    setErros((atual) => {
+      const proximos = { ...atual };
+      delete proximos.latitude;
+      delete proximos.longitude;
+      return proximos;
+    });
+  }
+
   function validar(): DenunciaFormData | null {
-    const parseLat = Number(form.latitude);
-    const parseLng = Number(form.longitude);
+    const parseLat = form.latitude.trim() === '' ? Number.NaN : Number(form.latitude);
+    const parseLng = form.longitude.trim() === '' ? Number.NaN : Number(form.longitude);
     const resultado = denunciaSchema.safeParse({
       titulo: form.titulo,
       descricao: form.descricao,
       categoria: form.categoria || undefined,
-      latitude: Number.isNaN(parseLat) ? form.latitude : parseLat,
-      longitude: Number.isNaN(parseLng) ? form.longitude : parseLng,
+      latitude: parseLat,
+      longitude: parseLng,
       foto: form.foto || undefined,
     });
     if (resultado.success) return resultado.data;
@@ -142,6 +172,21 @@ export default function DenunciaForm({ denuncia }: { denuncia?: Denuncia }) {
           />
           {erros.longitude && <p className="text-xs text-red-600 mt-1">{erros.longitude}</p>}
         </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-1">Localizacao no mapa</label>
+        <p className="text-xs text-slate-500 mb-2">
+          Clique no mapa para marcar o ponto do problema. Latitude e longitude sao preenchidas automaticamente.
+        </p>
+        <MapaSelecao
+          latitude={coordenadasValidas ? latitudeNumero : null}
+          longitude={coordenadasValidas ? longitudeNumero : null}
+          onSelecionar={selecionarNoMapa}
+        />
+        {(erros.latitude || erros.longitude) && (
+          <p className="text-xs text-red-600 mt-1">{erros.latitude || erros.longitude}</p>
+        )}
       </div>
 
       <div className="grid sm:grid-cols-2 gap-4">

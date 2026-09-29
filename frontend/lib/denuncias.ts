@@ -39,8 +39,14 @@ export const denunciaSchema = z.object({
   titulo: z.string().min(5, 'O titulo deve ter entre 5 e 100 caracteres').max(100, 'O titulo deve ter entre 5 e 100 caracteres'),
   descricao: z.string().min(10, 'A descricao deve ter entre 10 e 1000 caracteres').max(1000, 'A descricao deve ter entre 10 e 1000 caracteres'),
   categoria: z.enum(['buraco', 'poste', 'lixo', 'agua', 'outros'], { message: 'Selecione uma categoria' }),
-  latitude: z.number().min(-90).max(90),
-  longitude: z.number().min(-180).max(180),
+  latitude: z
+    .number({ invalid_type_error: 'Clique no mapa ou informe a latitude' })
+    .min(-90, 'A latitude deve estar entre -90 e 90')
+    .max(90, 'A latitude deve estar entre -90 e 90'),
+  longitude: z
+    .number({ invalid_type_error: 'Clique no mapa ou informe a longitude' })
+    .min(-180, 'A longitude deve estar entre -180 e 180')
+    .max(180, 'A longitude deve estar entre -180 e 180'),
   foto: z.string().url('Informe uma URL valida').optional().or(z.literal('')),
 });
 
