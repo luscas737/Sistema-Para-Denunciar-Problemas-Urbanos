@@ -38,7 +38,6 @@ export class CriarCidadaoDto extends createZodDto(criarCidadaoSchema) {}
 export class AtualizarCidadaoDto extends createZodDto(atualizarCidadaoSchema) {}
 export class ListarUsuariosQueryDto extends createZodDto(listarUsuariosSchema) {}
 
-/** DTO de saída: nunca devolve a entidade direto, para o contrato ficar estável. */
 export class UsuarioResponseDto {
   @ApiProperty({ format: 'uuid' })
   id: string;

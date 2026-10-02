@@ -60,7 +60,6 @@ export async function listarDenuncias(filtros?: { categoria?: string; status?: s
   const resposta = await fetch(`${API_URL}/denuncias${query ? `?${query}` : ''}`, { cache: 'no-store' });
   if (!resposta.ok) throw new Error('Falha ao carregar denuncias');
   const dados = await resposta.json();
-  // A API responde com envelope paginado ({ itens, total, ... }); aceita lista por compatibilidade.
   return Array.isArray(dados) ? dados : dados.itens;
 }
 

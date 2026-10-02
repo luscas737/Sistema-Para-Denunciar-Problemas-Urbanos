@@ -11,7 +11,6 @@ import { Denuncia } from './entities/denuncia.entity';
   controllers: [DenunciasController],
   providers: [
     DenunciasService,
-    // TODO(P3): trocar pela implementação real que persiste em `historico_status`.
     { provide: HISTORICO_RECORDER, useClass: HistoricoRecorderNulo },
   ],
   exports: [DenunciasService],

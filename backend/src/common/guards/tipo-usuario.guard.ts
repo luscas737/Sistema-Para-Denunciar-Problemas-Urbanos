@@ -7,10 +7,6 @@ import { TIPOS_PERMITIDOS_KEY } from '../decorators/tipos-usuario.decorator';
 export const CABECALHO_TIPO_USUARIO = 'x-tipo-usuario';
 export const CABECALHO_USUARIO_ID = 'x-usuario-id';
 
-/**
- * Autorização simplificada do MVP (decisão D5): o tipo do usuário vem do header
- * `x-tipo-usuario`, com `cidadao` como padrão. O JWT entra em uma etapa posterior.
- */
 @Injectable()
 export class TipoUsuarioGuard implements CanActivate {
   constructor(private readonly reflector: Reflector) {}

@@ -1,9 +1,5 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-/**
- * Baseline: cria a tabela `denuncias` no estado atual do projeto.
- * As evoluções (cidadaoId, setorAtualId, arquivamento) entram em migrations seguintes.
- */
 export class CriarDenuncias1759500000000 implements MigrationInterface {
   name = 'CriarDenuncias1759500000000';
 

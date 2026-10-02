@@ -26,7 +26,6 @@ export interface ResultadoListagem {
   total: number;
 }
 
-/** Quem está executando a ação (tipo e id vêm dos headers `x-tipo-usuario` e `x-usuario-id`). */
 export interface ContextoAtuacao {
   tipo: TipoUsuario;
   usuarioId?: string | null;
@@ -64,10 +63,6 @@ export class DenunciasService {
     return this.denuncias.save(denuncia);
   }
 
-  /**
-   * Listagem com filtros (status, categoria, setor), busca textual e paginação.
-   * Arquivadas ficam fora por padrão; `?arquivadas=true` libera todas (seção 6.4).
-   */
   async listar(filtros: ListarDenunciasQueryDto): Promise<ResultadoListagem> {
     const base: FindOptionsWhere<Denuncia> = {};
     if (!filtros.arquivadas) base.arquivada = false;
@@ -92,7 +87,6 @@ export class DenunciasService {
     return { itens, total };
   }
 
-  /** Usado pelo mapa: mesmos filtros, sem paginação (precisa de todos os pontos). */
   async listarParaMapa(filtros: ListarDenunciasQueryDto): Promise<Denuncia[]> {
     const where: FindOptionsWhere<Denuncia> = { arquivada: false };
     if (filtros.status) where.status = filtros.status;
@@ -110,7 +104,6 @@ export class DenunciasService {
     return denuncia;
   }
 
-  /** O status não é alterado aqui: isso passa pela máquina de estados (PATCH /:id/status). */
   async atualizar(id: string, dto: AtualizarDenunciaDto): Promise<Denuncia> {
     const denuncia = await this.obterPorId(id);
 
@@ -127,7 +120,6 @@ export class DenunciasService {
     return this.denuncias.save(denuncia);
   }
 
-  /** Decisão D2: arquivar em vez de excluir, para não perder histórico. */
   async arquivar(id: string): Promise<Denuncia> {
     const denuncia = await this.obterPorId(id);
     if (denuncia.arquivada) return denuncia;
@@ -137,10 +129,6 @@ export class DenunciasService {
     return this.denuncias.save(denuncia);
   }
 
-  /**
-   * Máquina de estados da seção 6.2: valida a transição, o tipo de usuário e as
-   * pré-condições, e grava a mudança junto com o histórico (decisão D7).
-   */
   async alterarStatus(
     id: string,
     dto: AtualizarStatusDto,
@@ -177,8 +165,6 @@ export class DenunciasService {
         'A denúncia precisa estar vinculada a um setor para entrar em andamento.',
       );
     }
-
-    // TODO(P2): ao entrar em `encaminhada`, exigir um Encaminhamento existente para o setor.
 
     const statusAnterior = denuncia.status;
     const comentario = dto.comentario?.trim() || null;

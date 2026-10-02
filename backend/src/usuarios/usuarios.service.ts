@@ -68,21 +68,18 @@ export class UsuariosService {
     return this.cidadaos.save(cidadao);
   }
 
-  /** Regra da seção 6.4: usuário não é excluído, é desativado. */
   async desativarCidadao(id: string): Promise<Cidadao> {
     const cidadao = await this.obterCidadao(id);
     cidadao.ativo = false;
     return this.cidadaos.save(cidadao);
   }
 
-  /** Listagem polimórfica de usuários (qualquer tipo). */
   async listar(filtros: ListarUsuariosQueryDto): Promise<Usuario[]> {
     const where = this.montarWhere(filtros);
     if (filtros.tipo === TipoUsuario.CIDADAO) {
       return this.cidadaos.find({ where, order: { nome: 'ASC' } });
     }
     if (filtros.tipo) {
-      // P2/P3: acrescentar os ramos de Atendente e Administrador.
       return [];
     }
     return this.usuarios.find({ where, order: { nome: 'ASC' } });

@@ -33,7 +33,6 @@ export class Denuncia {
   @Column('varchar', { length: 20, default: StatusDenuncia.RECEBIDA })
   status: StatusDenuncia;
 
-  /** Autor da denúncia (nulo em denúncia anônima). Só aceita `Cidadao`. */
   @Column('varchar', { nullable: true })
   cidadaoId: string | null;
 
@@ -41,14 +40,9 @@ export class Denuncia {
   @JoinColumn({ name: 'cidadaoId' })
   cidadao?: Cidadao | null;
 
-  /**
-   * TODO(P2): virar `@ManyToOne(() => Setor, { onDelete: 'SET NULL' })` quando a
-   * entidade `Setor` existir. Hoje é a coluna simples já filtrada na listagem.
-   */
   @Column('varchar', { nullable: true })
   setorAtualId: string | null;
 
-  /** Arquivamento substitui a exclusão (decisão D2): preserva o histórico. */
   @Column('boolean', { default: false })
   arquivada: boolean;
 

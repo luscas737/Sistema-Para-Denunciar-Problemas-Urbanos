@@ -27,10 +27,6 @@ function extrairDetalhes(corpo: unknown): ErroDetalheDto[] | undefined {
   });
 }
 
-/**
- * Normaliza toda resposta de erro no formato do contrato:
- * { statusCode, mensagem, detalhes? }.
- */
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(HttpExceptionFilter.name);

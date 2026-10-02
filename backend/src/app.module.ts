@@ -8,7 +8,6 @@ import { opcoesBanco } from './database/data-source';
   imports: [
     TypeOrmModule.forRoot({
       ...opcoesBanco,
-      // Aplica as migrations pendentes ao subir a API (facilita o start.sh).
       migrationsRun: true,
     }),
     DenunciasModule,

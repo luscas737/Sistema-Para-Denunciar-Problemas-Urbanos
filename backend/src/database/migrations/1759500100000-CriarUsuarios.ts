@@ -1,9 +1,5 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-/**
- * Herança de tabela única (decisão D1): uma tabela `usuarios` com a coluna
- * discriminadora `tipo`. Colunas de subtipo ficam nulas nos outros tipos.
- */
 export class CriarUsuarios1759500100000 implements MigrationInterface {
   name = 'CriarUsuarios1759500100000';
 

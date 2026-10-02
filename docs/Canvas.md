@@ -62,9 +62,6 @@ O que **não** faremos nesta versão, e por quê:
 | Contexto de uso | `Smartphones, com conexão à internet` |
 | Orçamento | `Por enquanto, R$ 0,00` |
 
-> **Atualização (Etapa 2):** o banco passou de PostgreSQL para **SQLite** (via TypeORM, com migrações
-> versionadas) e a lista de papéis foi alinhada ao modelo de dados: Cidadão, Atendente e Administrador.
-> PostgreSQL fica registrado como evolução futura (a troca é barata, pois o schema é versionado por migrations).
 
 ## 8. Riscos principais
 

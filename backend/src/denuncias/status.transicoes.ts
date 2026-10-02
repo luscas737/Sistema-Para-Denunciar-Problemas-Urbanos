@@ -10,7 +10,6 @@ export interface Transicao {
   descricao: string;
 }
 
-/** Fonte da verdade do fluxo de status (seção 6.2 do plano de trabalho). */
 export const TRANSICOES: Transicao[] = [
   {
     de: StatusDenuncia.RECEBIDA,

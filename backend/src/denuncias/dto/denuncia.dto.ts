@@ -27,7 +27,6 @@ export const criarDenunciaSchema = z.object({
   cidadaoId: z.string().uuid('Informe um UUID válido para o cidadão').optional().nullable(),
 });
 
-/** O status não entra no PATCH genérico: ele passa pela máquina de estados (PATCH /:id/status). */
 export const atualizarDenunciaSchema = criarDenunciaSchema.partial();
 
 export const listarDenunciasSchema = z.object({
@@ -62,7 +61,6 @@ export class AtualizarDenunciaDto extends createZodDto(atualizarDenunciaSchema) 
 export class ListarDenunciasQueryDto extends createZodDto(listarDenunciasSchema) {}
 export class AtualizarStatusDto extends createZodDto(atualizarStatusSchema) {}
 
-/** DTO de saída: o contrato exposto não é a entidade. */
 export class DenunciaResponseDto {
   @ApiProperty({ format: 'uuid' })
   id: string;

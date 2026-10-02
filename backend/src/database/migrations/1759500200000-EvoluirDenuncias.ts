@@ -3,13 +3,6 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 const COLUNAS_COMUNS =
   '"id", "titulo", "descricao", "categoria", "latitude", "longitude", "status", "criadoEm", "atualizadoEm"';
 
-/**
- * Evolução da Denuncia: autor (cidadaoId, com FK RESTRICT), setor atual e
- * arquivamento (decisão D2). O campo `foto` sai: o anexo passa a ser entidade própria.
- *
- * SQLite não aceita adicionar FK via ALTER TABLE, então a tabela é reconstruída
- * (mesma estratégia que o TypeORM usa em `synchronize`).
- */
 export class EvoluirDenuncias1759500200000 implements MigrationInterface {
   name = 'EvoluirDenuncias1759500200000';
 

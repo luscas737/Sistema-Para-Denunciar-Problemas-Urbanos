@@ -1,6 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-/** Detalhe de um campo inválido na resposta de erro. */
 export class ErroDetalheDto {
   @ApiProperty({ example: 'titulo', description: 'Campo ou parâmetro que falhou' })
   campo: string;
@@ -9,7 +8,6 @@ export class ErroDetalheDto {
   mensagem: string;
 }
 
-/** Formato único de erro da API (400, 403, 404, 409 e 500). */
 export class ErroDto {
   @ApiProperty({ example: 400 })
   statusCode: number;
