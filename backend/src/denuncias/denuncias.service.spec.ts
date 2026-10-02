@@ -1,6 +1,9 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
+import { HISTORICO_RECORDER } from '../common/historico/historico-recorder';
+import { TipoUsuario } from '../common/tipos-usuario';
 import { Cidadao } from '../usuarios/entities/cidadao.entity';
 import { CategoriaDenuncia, StatusDenuncia } from './denuncia.enums';
 import { DenunciasService } from './denuncias.service';
@@ -36,13 +39,25 @@ describe('DenunciasService', () => {
   let service: DenunciasService;
   let denuncias: ReturnType<typeof mockRepository>;
   let cidadaos: ReturnType<typeof mockRepository>;
+  let gerenciador: { save: jest.Mock };
+  let historico: { registrar: jest.Mock };
 
   beforeEach(async () => {
+    gerenciador = { save: jest.fn(async (_entidade, dados) => dados) };
+    historico = { registrar: jest.fn(async () => undefined) };
+
     const moduleRef = await Test.createTestingModule({
       providers: [
         DenunciasService,
         { provide: getRepositoryToken(Denuncia), useFactory: mockRepository },
         { provide: getRepositoryToken(Cidadao), useFactory: mockRepository },
+        {
+          provide: DataSource,
+          useValue: {
+            transaction: jest.fn(async (callback) => callback(gerenciador)),
+          },
+        },
+        { provide: HISTORICO_RECORDER, useValue: historico },
       ],
     }).compile();
 
@@ -185,4 +200,143 @@ describe('DenunciasService', () => {
     });
   });
 
+  describe('máquina de estados', () => {
+    const contexto = (tipo: TipoUsuario) => ({ tipo, usuarioId: 'usuario-1' });
+
+    it('atendente encaminha a denúncia e grava o histórico na mesma transação', async () => {
+      denuncias.findOneBy.mockResolvedValue(denunciaBase());
+
+      const resultado = await service.alterarStatus(
+        'uuid-1',
+        { status: StatusDenuncia.ENCAMINHADA },
+        contexto(TipoUsuario.ATENDENTE),
+      );
+
+      expect(resultado.status).toBe(StatusDenuncia.ENCAMINHADA);
+      expect(historico.registrar).toHaveBeenCalledWith(
+        expect.objectContaining({
+          denunciaId: 'uuid-1',
+          statusAnterior: StatusDenuncia.RECEBIDA,
+          statusAtual: StatusDenuncia.ENCAMINHADA,
+        }),
+        expect.anything(),
+      );
+    });
+
+    it('recusa salto de etapa (recebida para resolvida) com 409', async () => {
+      denuncias.findOneBy.mockResolvedValue(denunciaBase());
+
+      await expect(
+        service.alterarStatus(
+          'uuid-1',
+          { status: StatusDenuncia.RESOLVIDA },
+          contexto(TipoUsuario.ADMINISTRADOR),
+        ),
+      ).rejects.toThrow(ConflictException);
+
+      expect(historico.registrar).not.toHaveBeenCalled();
+    });
+
+    it('recusa transição a partir de status final (resolvida para em_andamento) com 409', async () => {
+      denuncias.findOneBy.mockResolvedValue(denunciaBase({ status: StatusDenuncia.RESOLVIDA }));
+
+      await expect(
+        service.alterarStatus(
+          'uuid-1',
+          { status: StatusDenuncia.EM_ANDAMENTO },
+          contexto(TipoUsuario.ADMINISTRADOR),
+        ),
+      ).rejects.toThrow(ConflictException);
+    });
+
+    it('recusa encaminhamento feito por cidadão com 403', async () => {
+      denuncias.findOneBy.mockResolvedValue(denunciaBase());
+
+      await expect(
+        service.alterarStatus(
+          'uuid-1',
+          { status: StatusDenuncia.ENCAMINHADA },
+          contexto(TipoUsuario.CIDADAO),
+        ),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('exige setor definido para entrar em andamento (409)', async () => {
+      denuncias.findOneBy.mockResolvedValue(denunciaBase({ status: StatusDenuncia.ENCAMINHADA }));
+
+      await expect(
+        service.alterarStatus(
+          'uuid-1',
+          { status: StatusDenuncia.EM_ANDAMENTO },
+          contexto(TipoUsuario.ATENDENTE),
+        ),
+      ).rejects.toThrow(ConflictException);
+    });
+
+    it('permite entrar em andamento quando há setor definido', async () => {
+      denuncias.findOneBy.mockResolvedValue(
+        denunciaBase({ status: StatusDenuncia.ENCAMINHADA, setorAtualId: 'setor-1' }),
+      );
+
+      const resultado = await service.alterarStatus(
+        'uuid-1',
+        { status: StatusDenuncia.EM_ANDAMENTO },
+        contexto(TipoUsuario.ATENDENTE),
+      );
+
+      expect(resultado.status).toBe(StatusDenuncia.EM_ANDAMENTO);
+    });
+
+    it('reabertura exige comentário (400)', async () => {
+      denuncias.findOneBy.mockResolvedValue(denunciaBase({ status: StatusDenuncia.RESOLVIDA }));
+
+      await expect(
+        service.alterarStatus(
+          'uuid-1',
+          { status: StatusDenuncia.RECEBIDA },
+          contexto(TipoUsuario.ADMINISTRADOR),
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('reabertura é exclusiva do administrador (403 para atendente)', async () => {
+      denuncias.findOneBy.mockResolvedValue(denunciaBase({ status: StatusDenuncia.RESOLVIDA }));
+
+      await expect(
+        service.alterarStatus(
+          'uuid-1',
+          { status: StatusDenuncia.RECEBIDA, comentario: 'Denúncia reaberta para revisão' },
+          contexto(TipoUsuario.ATENDENTE),
+        ),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('administrador reabre com comentário', async () => {
+      denuncias.findOneBy.mockResolvedValue(denunciaBase({ status: StatusDenuncia.RESOLVIDA }));
+
+      const resultado = await service.alterarStatus(
+        'uuid-1',
+        { status: StatusDenuncia.RECEBIDA, comentario: 'Denúncia reaberta para revisão' },
+        contexto(TipoUsuario.ADMINISTRADOR),
+      );
+
+      expect(resultado.status).toBe(StatusDenuncia.RECEBIDA);
+      expect(historico.registrar).toHaveBeenCalledWith(
+        expect.objectContaining({ comentario: 'Denúncia reaberta para revisão' }),
+        expect.anything(),
+      );
+    });
+
+    it('denúncia arquivada não muda de status (409)', async () => {
+      denuncias.findOneBy.mockResolvedValue(denunciaBase({ arquivada: true }));
+
+      await expect(
+        service.alterarStatus(
+          'uuid-1',
+          { status: StatusDenuncia.ENCAMINHADA },
+          contexto(TipoUsuario.ADMINISTRADOR),
+        ),
+      ).rejects.toThrow(ConflictException);
+    });
+  });
 });

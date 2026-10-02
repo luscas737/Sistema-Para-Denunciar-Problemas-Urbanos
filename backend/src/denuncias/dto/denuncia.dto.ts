@@ -27,6 +27,7 @@ export const criarDenunciaSchema = z.object({
   cidadaoId: z.string().uuid('Informe um UUID válido para o cidadão').optional().nullable(),
 });
 
+/** O status não entra no PATCH genérico: ele passa pela máquina de estados (PATCH /:id/status). */
 export const atualizarDenunciaSchema = criarDenunciaSchema.partial();
 
 export const listarDenunciasSchema = z.object({
@@ -47,9 +48,19 @@ export const listarDenunciasSchema = z.object({
     .default(20),
 });
 
+export const atualizarStatusSchema = z.object({
+  status: statusEnum,
+  comentario: z
+    .string()
+    .max(300, 'O comentário deve ter no máximo 300 caracteres')
+    .optional()
+    .nullable(),
+});
+
 export class CriarDenunciaDto extends createZodDto(criarDenunciaSchema) {}
 export class AtualizarDenunciaDto extends createZodDto(atualizarDenunciaSchema) {}
 export class ListarDenunciasQueryDto extends createZodDto(listarDenunciasSchema) {}
+export class AtualizarStatusDto extends createZodDto(atualizarStatusSchema) {}
 
 /** DTO de saída: o contrato exposto não é a entidade. */
 export class DenunciaResponseDto {

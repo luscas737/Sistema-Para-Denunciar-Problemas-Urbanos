@@ -1,18 +1,35 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsWhere, Like, Repository } from 'typeorm';
+import { DataSource, FindOptionsWhere, Like, Repository } from 'typeorm';
+import { HISTORICO_RECORDER, HistoricoRecorder } from '../common/historico/historico-recorder';
+import { TipoUsuario } from '../common/tipos-usuario';
 import { Cidadao } from '../usuarios/entities/cidadao.entity';
 import {
   AtualizarDenunciaDto,
+  AtualizarStatusDto,
   CriarDenunciaDto,
   ListarDenunciasQueryDto,
 } from './dto/denuncia.dto';
 import { StatusDenuncia } from './denuncia.enums';
 import { Denuncia } from './entities/denuncia.entity';
+import { localizarTransicao, transicoesPossiveis } from './status.transicoes';
 
 export interface ResultadoListagem {
   itens: Denuncia[];
   total: number;
+}
+
+/** Quem está executando a ação (tipo e id vêm dos headers `x-tipo-usuario` e `x-usuario-id`). */
+export interface ContextoAtuacao {
+  tipo: TipoUsuario;
+  usuarioId?: string | null;
 }
 
 @Injectable()
@@ -22,6 +39,9 @@ export class DenunciasService {
     private readonly denuncias: Repository<Denuncia>,
     @InjectRepository(Cidadao)
     private readonly cidadaos: Repository<Cidadao>,
+    private readonly dataSource: DataSource,
+    @Inject(HISTORICO_RECORDER)
+    private readonly historico: HistoricoRecorder,
   ) {}
 
   async criar(dto: CriarDenunciaDto): Promise<Denuncia> {
@@ -115,6 +135,69 @@ export class DenunciasService {
     denuncia.arquivada = true;
     denuncia.arquivadaEm = new Date();
     return this.denuncias.save(denuncia);
+  }
+
+  /**
+   * Máquina de estados da seção 6.2: valida a transição, o tipo de usuário e as
+   * pré-condições, e grava a mudança junto com o histórico (decisão D7).
+   */
+  async alterarStatus(
+    id: string,
+    dto: AtualizarStatusDto,
+    contexto: ContextoAtuacao,
+  ): Promise<Denuncia> {
+    const denuncia = await this.obterPorId(id);
+
+    if (denuncia.arquivada) {
+      throw new ConflictException('Denúncia arquivada não pode mudar de status.');
+    }
+
+    const transicao = localizarTransicao(denuncia.status, dto.status);
+    if (!transicao) {
+      const permitidas = transicoesPossiveis(denuncia.status);
+      throw new ConflictException(
+        permitidas.length > 0
+          ? `Transição inválida de "${denuncia.status}" para "${dto.status}". A partir deste status só é possível ir para: ${permitidas.join(', ')}.`
+          : `O status "${denuncia.status}" é final e não permite novas transições.`,
+      );
+    }
+
+    if (!transicao.tiposPermitidos.includes(contexto.tipo)) {
+      throw new ForbiddenException(
+        `A transição "${transicao.descricao}" é permitida apenas para: ${transicao.tiposPermitidos.join(', ')}.`,
+      );
+    }
+
+    if (transicao.exigeComentario && !dto.comentario?.trim()) {
+      throw new BadRequestException('A reabertura da denúncia exige um comentário.');
+    }
+
+    if (transicao.exigeSetorAtual && !denuncia.setorAtualId) {
+      throw new ConflictException(
+        'A denúncia precisa estar vinculada a um setor para entrar em andamento.',
+      );
+    }
+
+    // TODO(P2): ao entrar em `encaminhada`, exigir um Encaminhamento existente para o setor.
+
+    const statusAnterior = denuncia.status;
+    const comentario = dto.comentario?.trim() || null;
+
+    return this.dataSource.transaction(async (gerenciador) => {
+      denuncia.status = dto.status;
+      const salva = await gerenciador.save(Denuncia, denuncia);
+      await this.historico.registrar(
+        {
+          denunciaId: salva.id,
+          statusAnterior,
+          statusAtual: dto.status,
+          alteradoPorId: contexto.usuarioId ?? null,
+          comentario,
+        },
+        gerenciador,
+      );
+      return salva;
+    });
   }
 
   private async garantirCidadaoAtivo(cidadaoId: string): Promise<void> {

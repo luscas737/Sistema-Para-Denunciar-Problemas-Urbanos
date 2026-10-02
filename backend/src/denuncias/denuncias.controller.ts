@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Headers,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -11,12 +12,19 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiHeader, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { TiposPermitidos } from '../common/decorators/tipos-usuario.decorator';
 import { ErroDto } from '../common/dto/erro.dto';
-import { CABECALHO_TIPO_USUARIO, TipoUsuarioGuard } from '../common/guards/tipo-usuario.guard';
+import {
+  CABECALHO_TIPO_USUARIO,
+  CABECALHO_USUARIO_ID,
+  TipoUsuarioGuard,
+} from '../common/guards/tipo-usuario.guard';
+import { TipoUsuario } from '../common/tipos-usuario';
 import { DenunciasService } from './denuncias.service';
 import { paraDenunciaDto, paraPaginacao } from './denuncias.mapper';
 import {
   AtualizarDenunciaDto,
+  AtualizarStatusDto,
   CriarDenunciaDto,
   DenunciaResponseDto,
   ListaDenunciasResponseDto,
@@ -28,6 +36,11 @@ import {
   name: CABECALHO_TIPO_USUARIO,
   required: false,
   description: 'Tipo do usuário: cidadao (padrão), atendente ou administrador',
+})
+@ApiHeader({
+  name: CABECALHO_USUARIO_ID,
+  required: false,
+  description: 'Id do usuário que executa a ação (usado no histórico de status)',
 })
 @UseGuards(TipoUsuarioGuard)
 @Controller('denuncias')
@@ -72,8 +85,34 @@ export class DenunciasController {
     return paraDenunciaDto(await this.denunciasService.obterPorId(id));
   }
 
+  @Patch(':id/status')
+  @TiposPermitidos(TipoUsuario.ATENDENTE, TipoUsuario.ADMINISTRADOR)
+  @ApiOperation({
+    summary: 'Muda o status seguindo o fluxo recebida -> encaminhada -> em_andamento -> resolvida',
+    description:
+      'Transição inválida responde 409. Reabertura (resolvida -> recebida) é exclusiva do administrador e exige comentário.',
+  })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiResponse({ status: 200, type: DenunciaResponseDto })
+  @ApiResponse({ status: 403, type: ErroDto, description: 'Transição não permitida para este tipo de usuário' })
+  @ApiResponse({ status: 404, type: ErroDto, description: 'Denúncia não encontrada' })
+  @ApiResponse({ status: 409, type: ErroDto, description: 'Transição de status inválida' })
+  async alterarStatus(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: AtualizarStatusDto,
+    @Headers(CABECALHO_TIPO_USUARIO) tipoUsuario?: string,
+    @Headers(CABECALHO_USUARIO_ID) usuarioId?: string,
+  ): Promise<DenunciaResponseDto> {
+    return paraDenunciaDto(
+      await this.denunciasService.alterarStatus(id, dto, {
+        tipo: (tipoUsuario as TipoUsuario) ?? TipoUsuario.CIDADAO,
+        usuarioId: usuarioId ?? null,
+      }),
+    );
+  }
+
   @Patch(':id')
-  @ApiOperation({ summary: 'Atualiza os dados de uma denúncia' })
+  @ApiOperation({ summary: 'Atualiza os dados de uma denúncia (status tem rota própria)' })
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiResponse({ status: 200, type: DenunciaResponseDto })
   @ApiResponse({ status: 404, type: ErroDto, description: 'Denúncia não encontrada' })

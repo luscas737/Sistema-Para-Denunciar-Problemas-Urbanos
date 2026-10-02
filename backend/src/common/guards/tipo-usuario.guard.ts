@@ -5,6 +5,7 @@ import { TipoUsuario } from '../tipos-usuario';
 import { TIPOS_PERMITIDOS_KEY } from '../decorators/tipos-usuario.decorator';
 
 export const CABECALHO_TIPO_USUARIO = 'x-tipo-usuario';
+export const CABECALHO_USUARIO_ID = 'x-usuario-id';
 
 /**
  * Autorização simplificada do MVP (decisão D5): o tipo do usuário vem do header

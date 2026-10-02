@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { EntityManager } from 'typeorm';
 
 export const HISTORICO_RECORDER = 'HISTORICO_RECORDER';
 
@@ -12,7 +13,7 @@ export interface RegistroHistorico {
 }
 
 export interface HistoricoRecorder {
-  registrar(registro: RegistroHistorico): Promise<void>;
+  registrar(registro: RegistroHistorico, gerenciador?: EntityManager): Promise<void>;
 }
 
 /**
