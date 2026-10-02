@@ -2,9 +2,12 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
+  ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { Cidadao } from '../../usuarios/entities/cidadao.entity';
 import { CategoriaDenuncia, StatusDenuncia } from '../denuncia.enums';
 
 @Entity('denuncias')
@@ -27,11 +30,30 @@ export class Denuncia {
   @Column('real')
   longitude: number;
 
-  @Column('varchar', { length: 500, nullable: true })
-  foto: string | null;
-
   @Column('varchar', { length: 20, default: StatusDenuncia.RECEBIDA })
   status: StatusDenuncia;
+
+  /** Autor da denúncia (nulo em denúncia anônima). Só aceita `Cidadao`. */
+  @Column('varchar', { nullable: true })
+  cidadaoId: string | null;
+
+  @ManyToOne(() => Cidadao, { nullable: true, onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'cidadaoId' })
+  cidadao?: Cidadao | null;
+
+  /**
+   * TODO(P2): virar `@ManyToOne(() => Setor, { onDelete: 'SET NULL' })` quando a
+   * entidade `Setor` existir. Hoje é a coluna simples já filtrada na listagem.
+   */
+  @Column('varchar', { nullable: true })
+  setorAtualId: string | null;
+
+  /** Arquivamento substitui a exclusão (decisão D2): preserva o histórico. */
+  @Column('boolean', { default: false })
+  arquivada: boolean;
+
+  @Column('datetime', { nullable: true })
+  arquivadaEm: Date | null;
 
   @CreateDateColumn()
   criadoEm: Date;
