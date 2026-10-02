@@ -48,8 +48,9 @@ O que **não** faremos nesta versão, e por quê:
 
 | Papel | O que pode fazer |
 |---|---|
-|Cidadão|Cadastra uma denúncia|
-|Prefeitura|Analisa a denúncia e a encaminha para o setor responsável|
+|Cidadão|Cadastra a denúncia, anexa evidências e acompanha o andamento|
+|Atendente (setor)|Analisa a denúncia, encaminha ao setor responsável e atualiza o status|
+|Administrador|Gerencia setores e usuários e reabre denúncias resolvidas|
 
 ## 7. Restrições
 
@@ -57,9 +58,13 @@ O que **não** faremos nesta versão, e por quê:
 |---|---|
 | Prazo | Semana 18 |
 | Equipe | `3` pessoas, `5` h/semana no total |
-| Técnica | TypeScript (NestJS + React), PostgreSQL, PaaS gratuita |
+| Técnica | TypeScript (NestJS + React), **SQLite via TypeORM**, PaaS gratuita |
 | Contexto de uso | `Smartphones, com conexão à internet` |
 | Orçamento | `Por enquanto, R$ 0,00` |
+
+> **Atualização (Etapa 2):** o banco passou de PostgreSQL para **SQLite** (via TypeORM, com migrações
+> versionadas) e a lista de papéis foi alinhada ao modelo de dados: Cidadão, Atendente e Administrador.
+> PostgreSQL fica registrado como evolução futura (a troca é barata, pois o schema é versionado por migrations).
 
 ## 8. Riscos principais
 
