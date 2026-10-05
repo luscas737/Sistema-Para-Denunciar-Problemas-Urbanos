@@ -22,7 +22,8 @@ export class EvoluirDenuncias1759500200000 implements MigrationInterface {
         "arquivadaEm" datetime,
         "criadoEm" datetime NOT NULL DEFAULT (datetime('now')),
         "atualizadoEm" datetime NOT NULL DEFAULT (datetime('now')),
-        CONSTRAINT "FK_denuncias_cidadao" FOREIGN KEY ("cidadaoId") REFERENCES "usuarios" ("id") ON DELETE RESTRICT ON UPDATE NO ACTION
+        CONSTRAINT "FK_denuncias_cidadao" FOREIGN KEY ("cidadaoId") REFERENCES "usuarios" ("id") ON DELETE RESTRICT ON UPDATE NO ACTION,
+        CONSTRAINT "FK_denuncias_setorAtual" FOREIGN KEY ("setorAtualId") REFERENCES "setores" ("id") ON DELETE SET NULL ON UPDATE NO ACTION
       )
     `);
     await queryRunner.query(`
