@@ -1,53 +1,36 @@
 import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsWhere, Repository } from 'typeorm';
-import {
-  AtualizarSetorDto,
-  CriarSetorDto,
-  ListarSetoresQueryDto,
-  ListaSetoresResponseDto,
-} from './dto/setor.dto';
-import { Setor } from './setores.entity';
+  Column,
+  CreateDateColumn,
+  Entity,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
+import { Denuncia } from '../denuncias/entities/denuncia.entity';
 
-@Injectable()
-export class SetoresService {
-  constructor(
-    @InjectRepository(Setor)
-    private readonly setores: Repository<Setor>,
-  ) {}
+@Entity('setores')
+export class Setor {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-  async criar(dto: CriarSetorDto): Promise<Setor> { /* ... igual ... */ }
+  @Column('varchar', { length: 120, unique: true })
+  nome: string;
 
-  // método listar substituído
-  async listar(filtros: ListarSetoresQueryDto): Promise<ListaSetoresResponseDto> {
-    const where: FindOptionsWhere<Setor> = {};
-    if (!filtros.incluirInativos) where.ativo = true;
+  @Column('varchar', { length: 300, nullable: true })
+  descricao: string | null;
 
-    const [itens, total] = await this.setores.findAndCount({
-      where,
-      order: { nome: 'ASC' },
-      skip: (filtros.pagina - 1) * filtros.limite,
-      take: filtros.limite,
-    });
+  @Column('varchar', { length: 160, nullable: true })
+  email: string | null;
 
-    return {
-      itens,
-      pagina: filtros.pagina,
-      limite: filtros.limite,
-      total,
-      totalPaginas: Math.ceil(total / filtros.limite),
-    };
-  }
+  @Column('boolean', { default: true })
+  ativo: boolean;
 
-  async obterPorId(id: string): Promise<Setor> { /* ... igual ... */ }
-  async obterAtivoParaEncaminhamento(id: string): Promise<Setor> { /* ... igual ... */ }
-  async atualizar(id: string, dto: AtualizarSetorDto): Promise<Setor> { /* ... igual ... */ }
-  async desativar(id: string): Promise<Setor> { /* ... igual ... */ }
+  @CreateDateColumn()
+  criadoEm: Date;
 
-  private async garantirNomeUnico(nome: string): Promise<void> { /* ... igual ... */ }
+  @UpdateDateColumn()
+  atualizadoEm: Date;
+
+  @OneToMany(() => Denuncia, (d) => d.setorAtual)
+  denunciasAtuais: Denuncia[];
 }
