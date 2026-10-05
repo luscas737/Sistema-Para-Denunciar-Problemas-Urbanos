@@ -7,6 +7,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { Setor } from '../../setores/setores.entity';
 import { Cidadao } from '../../usuarios/entities/cidadao.entity';
 import { CategoriaDenuncia, StatusDenuncia } from '../denuncia.enums';
 
@@ -42,6 +43,10 @@ export class Denuncia {
 
   @Column('varchar', { nullable: true })
   setorAtualId: string | null;
+
+  @ManyToOne(() => Setor, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'setorAtualId' })
+  setorAtual?: Setor | null;                                           
 
   @Column('boolean', { default: false })
   arquivada: boolean;
