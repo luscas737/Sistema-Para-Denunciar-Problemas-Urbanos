@@ -1,25 +1,45 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
+import { StatusDenuncia } from '../../denuncias/denuncia.enums';
+import { Denuncia } from '../../denuncias/entities/denuncia.entity';
+import { Usuario } from '../../usuarios/entities/usuario.entity';
 
 @Entity('historico_status')
 export class HistoricoStatus {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
+  @Column('varchar', { nullable: false })
   denunciaId: string;
 
-  @Column({ nullable: true })
-  statusAnterior: string;
+  @ManyToOne(() => Denuncia, { nullable: false, onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'denunciaId' })
+  denuncia?: Denuncia;
 
-  @Column()
-  statusAtual: string;
+  /** `null` na criação da denúncia (seção 5.2). */
+  @Column('varchar', { length: 20, nullable: true })
+  statusAnterior: StatusDenuncia | null;
 
-  @Column({ nullable: true })
-  alteradoPorId: string;
+  @Column('varchar', { length: 20, nullable: false })
+  statusAtual: StatusDenuncia;
 
-  @Column({ nullable: true })
-  comentario: string;
+  /** Qualquer tipo de usuário; `null` = sistema (seção 5.2). */
+  @Column('varchar', { nullable: true })
+  alteradoPorId: string | null;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @ManyToOne(() => Usuario, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'alteradoPorId' })
+  alteradoPor?: Usuario | null;
+
+  @Column('varchar', { length: 300, nullable: true })
+  comentario: string | null;
+
+  @CreateDateColumn()
   dataAlteracao: Date;
 }

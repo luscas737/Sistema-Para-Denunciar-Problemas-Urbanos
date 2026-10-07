@@ -1,28 +1,45 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
+import { Denuncia } from '../../denuncias/entities/denuncia.entity';
+import { Usuario } from '../../usuarios/entities/usuario.entity';
+
+export type TipoAnexo = 'imagem' | 'documento';
 
 @Entity('anexos')
 export class Anexo {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
+  @Column('varchar', { nullable: false })
   denunciaId: string;
 
-  @Column()
+  /** Único CASCADE do modelo (seção 5.3): anexo não tem valor fora da denúncia. */
+  @ManyToOne(() => Denuncia, { nullable: false, onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'denunciaId' })
+  denuncia?: Denuncia;
+
+  @Column('varchar', { length: 500, nullable: false })
   url: string;
 
-  @Column({
-    type: 'enum',
-    enum: ['imagem', 'documento'],
-  })
-  tipo: 'imagem' | 'documento';
+  @Column('varchar', { length: 20, nullable: false })
+  tipo: TipoAnexo;
 
-  @Column({ nullable: true })
-  descricao: string;
+  @Column('varchar', { length: 200, nullable: true })
+  descricao: string | null;
 
-  @Column({ nullable: true })
-  enviadoPorId: string;
+  @Column('varchar', { nullable: true })
+  enviadoPorId: string | null;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @ManyToOne(() => Usuario, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'enviadoPorId' })
+  enviadoPor?: Usuario | null;
+
+  @CreateDateColumn()
   criadoEm: Date;
 }
