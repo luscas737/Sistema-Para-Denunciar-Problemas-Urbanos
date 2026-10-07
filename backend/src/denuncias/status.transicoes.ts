@@ -7,6 +7,7 @@ export interface Transicao {
   tiposPermitidos: TipoUsuario[];
   exigeComentario: boolean;
   exigeSetorAtual: boolean;
+  exigeEncaminhamento: boolean;
   descricao: string;
 }
 
@@ -17,6 +18,7 @@ export const TRANSICOES: Transicao[] = [
     tiposPermitidos: [TipoUsuario.ATENDENTE, TipoUsuario.ADMINISTRADOR],
     exigeComentario: false,
     exigeSetorAtual: false,
+    exigeEncaminhamento: true,
     descricao: 'Encaminhar a denúncia ao setor responsável',
   },
   {
@@ -25,6 +27,7 @@ export const TRANSICOES: Transicao[] = [
     tiposPermitidos: [TipoUsuario.ATENDENTE, TipoUsuario.ADMINISTRADOR],
     exigeComentario: false,
     exigeSetorAtual: true,
+    exigeEncaminhamento: false,
     descricao: 'Iniciar o atendimento no setor',
   },
   {
@@ -33,6 +36,7 @@ export const TRANSICOES: Transicao[] = [
     tiposPermitidos: [TipoUsuario.ATENDENTE, TipoUsuario.ADMINISTRADOR],
     exigeComentario: false,
     exigeSetorAtual: false,
+    exigeEncaminhamento: false,
     descricao: 'Concluir o atendimento',
   },
   {
@@ -41,6 +45,7 @@ export const TRANSICOES: Transicao[] = [
     tiposPermitidos: [TipoUsuario.ADMINISTRADOR],
     exigeComentario: true,
     exigeSetorAtual: false,
+    exigeEncaminhamento: false,
     descricao: 'Reabrir a denúncia (somente administrador, com comentário)',
   },
 ];

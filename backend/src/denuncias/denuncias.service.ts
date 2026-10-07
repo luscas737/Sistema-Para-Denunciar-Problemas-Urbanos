@@ -7,7 +7,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, FindOptionsWhere, Like, Repository } from 'typeorm';
+import { DataSource, EntityManager, FindOptionsWhere, Like, Repository } from 'typeorm';
 import { HISTORICO_RECORDER, HistoricoRecorder } from '../common/historico/historico-recorder';
 import { TipoUsuario } from '../common/tipos-usuario';
 import { Cidadao } from '../usuarios/entities/cidadao.entity';
@@ -18,6 +18,7 @@ import {
   ListarDenunciasQueryDto,
 } from './dto/denuncia.dto';
 import { StatusDenuncia } from './denuncia.enums';
+import { Encaminhamento } from '../encaminhamentos/encaminhamento.entity';
 import { Denuncia } from './entities/denuncia.entity';
 import { localizarTransicao, transicoesPossiveis } from './status.transicoes';
 
@@ -60,7 +61,23 @@ export class DenunciasService {
       arquivada: false,
       arquivadaEm: null,
     });
-    return this.denuncias.save(denuncia);
+
+    // Seção 6.2: a criação grava a 1ª linha do histórico (statusAnterior = null),
+    // na mesma transação (D7).
+    return this.dataSource.transaction(async (gerenciador) => {
+      const salva = await gerenciador.save(Denuncia, denuncia);
+      await this.historico.registrar(
+        {
+          denunciaId: salva.id,
+          statusAnterior: null,
+          statusAtual: StatusDenuncia.RECEBIDA,
+          alteradoPorId: dto.cidadaoId ?? null,
+          comentario: null,
+        },
+        gerenciador,
+      );
+      return salva;
+    });
   }
 
   async listar(filtros: ListarDenunciasQueryDto): Promise<ResultadoListagem> {
@@ -104,8 +121,22 @@ export class DenunciasService {
     return denuncia;
   }
 
-  async atualizar(id: string, dto: AtualizarDenunciaDto): Promise<Denuncia> {
+  async atualizar(
+    id: string,
+    dto: AtualizarDenunciaDto,
+    contexto: ContextoAtuacao = { tipo: TipoUsuario.CIDADAO },
+  ): Promise<Denuncia> {
     const denuncia = await this.obterPorId(id);
+
+    // Regra 6.3-1: o autor corrige até a prefeitura assumir; depois só atendente/administrador.
+    const podeAposEncaminhar = [TipoUsuario.ATENDENTE, TipoUsuario.ADMINISTRADOR].includes(
+      contexto.tipo,
+    );
+    if (denuncia.status !== StatusDenuncia.RECEBIDA && !podeAposEncaminhar) {
+      throw new ConflictException(
+        'Denúncia em atendimento não pode ser alterada por quem não é atendente ou administrador.',
+      );
+    }
 
     if (dto.cidadaoId) {
       await this.garantirCidadaoAtivo(dto.cidadaoId);
@@ -133,6 +164,7 @@ export class DenunciasService {
     id: string,
     dto: AtualizarStatusDto,
     contexto: ContextoAtuacao,
+    gerenciadorExterno?: EntityManager,
   ): Promise<Denuncia> {
     const denuncia = await this.obterPorId(id);
 
@@ -168,8 +200,23 @@ export class DenunciasService {
 
     const statusAnterior = denuncia.status;
     const comentario = dto.comentario?.trim() || null;
+    const salvoId = denuncia.id;
 
-    return this.dataSource.transaction(async (gerenciador) => {
+    const executar = async (gerenciador: EntityManager): Promise<Denuncia> => {
+      // Regra 6.2: recebida -> encaminhada exige um Encaminhamento registrado.
+      // Contagem no mesmo gerenciador: quando chamado de dentro da transação do
+      // POST /encaminhamentos, o recém-criado é visível (mesma transação).
+      if (transicao.exigeEncaminhamento) {
+        const total = await gerenciador.count(Encaminhamento, {
+          where: { denunciaId: salvoId },
+        });
+        if (total === 0) {
+          throw new ConflictException(
+            'A denúncia precisa ter um encaminhamento registrado antes de mudar para "encaminhada".',
+          );
+        }
+      }
+
       denuncia.status = dto.status;
       const salva = await gerenciador.save(Denuncia, denuncia);
       await this.historico.registrar(
@@ -183,7 +230,9 @@ export class DenunciasService {
         gerenciador,
       );
       return salva;
-    });
+    };
+
+    return gerenciadorExterno ? executar(gerenciadorExterno) : this.dataSource.transaction(executar);
   }
 
   private async garantirCidadaoAtivo(cidadaoId: string): Promise<void> {

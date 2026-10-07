@@ -39,11 +39,14 @@ describe('DenunciasService', () => {
   let service: DenunciasService;
   let denuncias: ReturnType<typeof mockRepository>;
   let cidadaos: ReturnType<typeof mockRepository>;
-  let gerenciador: { save: jest.Mock };
+  let gerenciador: { save: jest.Mock; count: jest.Mock };
   let historico: { registrar: jest.Mock };
 
   beforeEach(async () => {
-    gerenciador = { save: jest.fn(async (_entidade, dados) => dados) };
+    gerenciador = {
+      save: jest.fn(async (_entidade, dados) => dados),
+      count: jest.fn(async () => 1),
+    };
     historico = { registrar: jest.fn(async () => undefined) };
 
     const moduleRef = await Test.createTestingModule({
@@ -223,6 +226,52 @@ describe('DenunciasService', () => {
       );
     });
 
+    it('recusa recebida -> encaminhada sem encaminhamento registrado (409)', async () => {
+      denuncias.findOneBy.mockResolvedValue(denunciaBase());
+      gerenciador.count.mockResolvedValue(0);
+
+      await expect(
+        service.alterarStatus(
+          'uuid-1',
+          { status: StatusDenuncia.ENCAMINHADA },
+          contexto(TipoUsuario.ATENDENTE),
+        ),
+      ).rejects.toThrow(ConflictException);
+
+      expect(historico.registrar).not.toHaveBeenCalled();
+      expect(gerenciador.save).not.toHaveBeenCalled();
+    });
+
+    it('permite a transição quando um encaminhamento já existe', async () => {
+      denuncias.findOneBy.mockResolvedValue(denunciaBase());
+      gerenciador.count.mockResolvedValue(2);
+
+      const resultado = await service.alterarStatus(
+        'uuid-1',
+        { status: StatusDenuncia.ENCAMINHADA },
+        contexto(TipoUsuario.ATENDENTE),
+      );
+
+      expect(resultado.status).toBe(StatusDenuncia.ENCAMINHADA);
+    });
+
+    it('a contagem de encaminhamentos usa o gerenciador externo quando informado', async () => {
+      denuncias.findOneBy.mockResolvedValue(denunciaBase());
+      gerenciador.count.mockResolvedValue(1);
+
+      await service.alterarStatus(
+        'uuid-1',
+        { status: StatusDenuncia.ENCAMINHADA },
+        contexto(TipoUsuario.ATENDENTE),
+        gerenciador as never,
+      );
+
+      expect(gerenciador.count).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ where: { denunciaId: 'uuid-1' } }),
+      );
+    });
+
     it('recusa salto de etapa (recebida para resolvida) com 409', async () => {
       denuncias.findOneBy.mockResolvedValue(denunciaBase());
 
@@ -337,6 +386,49 @@ describe('DenunciasService', () => {
           contexto(TipoUsuario.ADMINISTRADOR),
         ),
       ).rejects.toThrow(ConflictException);
+    });
+  });
+
+  describe('alteração de dados (regra 6.3-1)', () => {
+    const dto = { titulo: 'Título corrigido pelo autor' };
+
+    it('o autor pode corrigir enquanto a denúncia está recebida', async () => {
+      denuncias.findOneBy.mockResolvedValue(denunciaBase());
+      denuncias.save.mockImplementation(async (dados) => dados);
+
+      const resultado = await service.atualizar('uuid-1', dto, {
+        tipo: TipoUsuario.CIDADAO,
+        usuarioId: 'autor-1',
+      });
+
+      expect(resultado.titulo).toBe('Título corrigido pelo autor');
+      expect(denuncias.save).toHaveBeenCalled();
+    });
+
+    it('cidadão não altera denúncia depois de encaminhada (409)', async () => {
+      denuncias.findOneBy.mockResolvedValue(
+        denunciaBase({ status: StatusDenuncia.ENCAMINHADA, setorAtualId: 'setor-1' }),
+      );
+
+      await expect(
+        service.atualizar('uuid-1', dto, { tipo: TipoUsuario.CIDADAO, usuarioId: 'autor-1' }),
+      ).rejects.toThrow(ConflictException);
+
+      expect(denuncias.save).not.toHaveBeenCalled();
+    });
+
+    it('atendente altera denúncia em atendimento', async () => {
+      denuncias.findOneBy.mockResolvedValue(
+        denunciaBase({ status: StatusDenuncia.EM_ANDAMENTO, setorAtualId: 'setor-1' }),
+      );
+      denuncias.save.mockImplementation(async (dados) => dados);
+
+      const resultado = await service.atualizar('uuid-1', dto, {
+        tipo: TipoUsuario.ATENDENTE,
+        usuarioId: 'atendente-1',
+      });
+
+      expect(resultado.titulo).toBe('Título corrigido pelo autor');
     });
   });
 });

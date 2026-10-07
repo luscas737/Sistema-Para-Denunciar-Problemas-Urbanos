@@ -112,15 +112,27 @@ export class DenunciasController {
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Atualiza os dados de uma denúncia (status tem rota própria)' })
+  @ApiOperation({
+    summary: 'Atualiza os dados de uma denúncia (status tem rota própria)',
+    description:
+      'Regra 6.3-1: enquanto o status for "recebida" o autor pode corrigir; depois disso só atendente ou administrador.',
+  })
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiResponse({ status: 200, type: DenunciaResponseDto })
   @ApiResponse({ status: 404, type: ErroDto, description: 'Denúncia não encontrada' })
+  @ApiResponse({ status: 409, type: ErroDto, description: 'Denúncia em atendimento não pode ser alterada' })
   async atualizar(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: AtualizarDenunciaDto,
+    @Headers(CABECALHO_TIPO_USUARIO) tipoUsuario?: string,
+    @Headers(CABECALHO_USUARIO_ID) usuarioId?: string,
   ): Promise<DenunciaResponseDto> {
-    return paraDenunciaDto(await this.denunciasService.atualizar(id, dto));
+    return paraDenunciaDto(
+      await this.denunciasService.atualizar(id, dto, {
+        tipo: (tipoUsuario as TipoUsuario) ?? TipoUsuario.CIDADAO,
+        usuarioId: usuarioId ?? null,
+      }),
+    );
   }
 
   @Delete(':id')
