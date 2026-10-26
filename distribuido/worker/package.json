@@ -1,0 +1,12 @@
+{
+  "name": "@projeto/worker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Consumidor do fluxo de denúncias: recebe mensagens da fila e executa o encaminhamento.",
+  "type": "module",
+  "scripts": {
+    "start": "node --experimental-strip-types src/index.ts",
+    "dev": "node --watch --experimental-strip-types src/index.ts"
+  },
+  "license": "MIT"
+}
