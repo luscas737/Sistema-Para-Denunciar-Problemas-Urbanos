@@ -21,6 +21,7 @@ import { StatusDenuncia } from './denuncia.enums';
 import { Encaminhamento } from '../encaminhamentos/encaminhamento.entity';
 import { Denuncia } from './entities/denuncia.entity';
 import { localizarTransicao, transicoesPossiveis } from './status.transicoes';
+import { FilaService } from '../fila/fila.service';
 
 export interface ResultadoListagem {
   itens: Denuncia[];
@@ -42,6 +43,7 @@ export class DenunciasService {
     private readonly dataSource: DataSource,
     @Inject(HISTORICO_RECORDER)
     private readonly historico: HistoricoRecorder,
+    private readonly fila: FilaService,
   ) {}
 
   async criar(dto: CriarDenunciaDto): Promise<Denuncia> {
@@ -64,11 +66,11 @@ export class DenunciasService {
 
     // Seção 6.2: a criação grava a 1ª linha do histórico (statusAnterior = null),
     // na mesma transação (D7).
-    return this.dataSource.transaction(async (gerenciador) => {
-      const salva = await gerenciador.save(Denuncia, denuncia);
+    const salva = await this.dataSource.transaction(async (gerenciador) => {
+      const criado = await gerenciador.save(Denuncia, denuncia);
       await this.historico.registrar(
         {
-          denunciaId: salva.id,
+          denunciaId: criado.id,
           statusAnterior: null,
           statusAtual: StatusDenuncia.RECEBIDA,
           alteradoPorId: dto.cidadaoId ?? null,
@@ -76,8 +78,16 @@ export class DenunciasService {
         },
         gerenciador,
       );
-      return salva;
+      return criado;
     });
+
+    // Enfileira processamento assíncrono da denúncia (não bloqueia a resposta).
+    void this.fila.enfileirarDenuncia(salva.id, 'processar', {
+      categoria: salva.categoria,
+      titulo: salva.titulo,
+    });
+
+    return salva;
   }
 
   async listar(filtros: ListarDenunciasQueryDto): Promise<ResultadoListagem> {
