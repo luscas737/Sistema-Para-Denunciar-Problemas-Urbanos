@@ -1,0 +1,13 @@
+{
+  "name": "@projeto/queue-message",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Serviço de fila de mensageria (bastidor) — produtor (API) e consumidor (worker) se comunicam aqui, sem depender de MQ externo.",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "start": "node --experimental-strip-types src/index.ts",
+    "dev": "node --watch --experimental-strip-types src/index.ts"
+  },
+  "license": "MIT"
+}
