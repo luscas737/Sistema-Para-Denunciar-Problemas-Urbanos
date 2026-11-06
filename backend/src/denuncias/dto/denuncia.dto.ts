@@ -89,6 +89,7 @@ export class DenunciaResponseDto {
   @ApiProperty({ nullable: true, format: 'uuid', description: 'Setor responsável atual' })
   setorAtualId: string | null;
 
+<<<<<<< Updated upstream
     @ApiProperty({ nullable: true })
   setorAtual: { id: string; nome: string } | null;
 
@@ -98,6 +99,13 @@ export class DenunciaResponseDto {
     nome: string;
     ehPrincipal: boolean;
   }[] | null;
+=======
+  @ApiProperty({ type: 'object', additionalProperties: false, example: { id: '11111111-1111-1111-1111-111111111001', nome: 'Obras e Viação' }, nullable: true })
+  setorAtual: { id: string; nome: string } | null;
+
+  @ApiProperty({ type: 'array', example: [{ id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', nome: 'buraco', ehPrincipal: true }] })
+  categorias: { id: string; nome: string; ehPrincipal: boolean }[];
+>>>>>>> Stashed changes
 
   @ApiProperty({ example: false })
   arquivada: boolean;
