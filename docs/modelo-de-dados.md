@@ -170,3 +170,84 @@ Legenda dos símbolos (conforme cheatsheet M04):
 - **`synchronize: false`**: intencional — o banco será gerenciado por migrações (próxima atividade, M05), não por `synchronize`, evitando perda de dados.
 - **Herança:** `Usuario` usa `TableInheritance` com coluna discriminadora `tipo` (`cidadao`, `atendente`, `administrador`).
 
+---
+
+## 7. Seção de Verificação (M05/M06)
+
+### 7.1 Banco nasce das migrações
+
+Banco vazio (`dev.db` removido) → `npm run migration:run` aplicou todas as migrações sem erro:
+
+```
+8 migrations are already loaded in the database.
+1 migrations are new migrations must be executed.
+Migration CriarCategoriasEDenunciasCategorias1793961819160 has been executed successfully.
+```
+
+Tabelas criadas: `denuncias`, `usuarios`, `setores`, `encaminhamentos`, `historico_status`, `anexos`, `categorias`, `denuncias_categorias`.
+
+`npm run migration:revert` desfez a última migração (dropou `categorias` e `denuncias_categorias`) sem erro, e `npm run migration:run` as recriou.
+
+### 7.2 Listagem com relações (sem N+1)
+
+Com `LOG_QUERIES=true`, a listagem `GET /api/denuncias` dispara **2 consultas**:
+
+1. `SELECT DISTINCT ...` (contagem total com LEFT JOIN nas relações)
+2. `SELECT ... FROM "denuncias" ... LEFT JOIN "denuncias_categorias" ... LEFT JOIN "categorias" ... LEFT JOIN "setores"` (dados paginados)
+
+As relações `setorAtual` e `categorias.categoria` são carregadas via `LEFT JOIN` em uma única consulta — **não há N+1**.
+
+Exemplo de resposta (2 itens, com N-N exercitado):
+
+```json
+{
+  "pagina": 1,
+  "limite": 20,
+  "total": 2,
+  "itens": [
+    {
+      "id": "66666666-6666-6666-6666-666666666006",
+      "titulo": "Buraco na Rua das Flores",
+      "categoria": "buraco",
+      "status": "recebida",
+      "setorAtual": null,
+      "categorias": [
+        { "id": "aaaaaaaa-...", "nome": "buraco", "ehPrincipal": true },
+        { "id": "cccccccc-...", "nome": "lixo", "ehPrincipal": false }
+      ]
+    }
+  ]
+}
+```
+
+### 7.3 Restrições funcionando
+
+**UNIQUE `usuarios.email`:**
+
+```bash
+curl -X POST http://localhost:3001/api/cidadaos \
+  -H 'Content-Type: application/json' \
+  -d '{"nome":"Maria Duplicate","email":"maria@email.com","cpf":"111.222.333-44","bairro":"Centro"}'
+```
+
+Resposta:
+
+```json
+{
+  "statusCode": 409,
+  "mensagem": "Já existe um usuário com o e-mail maria@email.com."
+}
+```
+
+Status HTTP: **409** (não 500).
+
+**RESTRICT (exclusão bloqueada):**
+
+```sql
+PRAGMA foreign_keys = ON;
+DELETE FROM usuarios WHERE id = '33333333-3333-3333-3333-333333333003';
+-- cidadão com denúncias vinculadas
+```
+
+Resultado do banco: `FOREIGN KEY constraint failed` (exclusão rejeitada).
+
