@@ -89,6 +89,16 @@ export class DenunciaResponseDto {
   @ApiProperty({ nullable: true, format: 'uuid', description: 'Setor responsável atual' })
   setorAtualId: string | null;
 
+    @ApiProperty({ nullable: true })
+  setorAtual: { id: string; nome: string } | null;
+
+  @ApiProperty({ nullable: true })
+  categorias: {
+    id: string;
+    nome: string;
+    ehPrincipal: boolean;
+  }[] | null;
+
   @ApiProperty({ example: false })
   arquivada: boolean;
 
