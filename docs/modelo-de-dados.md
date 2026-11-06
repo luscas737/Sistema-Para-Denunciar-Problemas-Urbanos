@@ -1,6 +1,5 @@
 # Modelo de Dados — Sistema Para Denunciar Problemas Urbanos
 
-> **Referências:** M04 — Entidades (etapas 8, 11, 12, 13 e 14) e cheatsheet do M04 (`referencias/cheatsheet.md`, `referencias/README.md`).  
 > **Banco:** SQLite via TypeORM (`synchronize: false`, migrações na próxima atividade).  
 > **Histórias Must atendidas (Canvas §4):**  
 > 1. Cadastrar denúncia (título, descrição, categoria, localização)  
