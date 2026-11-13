@@ -94,6 +94,104 @@ async function main() {
     );
     console.log('Histórico de status criado.');
 
+    // 9. Autores (50 autores para volume)
+    const autores: string[] = [];
+    const nomesAutores = [
+      'Machado de Assis', 'José de Alencar', 'Clarice Lispector', 'Carlos Drummond de Andrade',
+      'Cora Coralina', 'Guimarães Rosa', 'Lygia Fagundes Telles', 'Érico Veríssimo',
+      'João Guimarães Rosa', 'Rachel de Queiroz', 'Graciliano Ramos', 'Jorge Amado',
+      'Érico Verossim', 'Monteiro Lobato', 'Manuel Bandeira', 'Oswald de Andrade',
+      'Mário de Andrade', 'Cecília Meireles', 'Vinicius de Moraes', 'Drummond',
+      'Machado', 'Machado de Assis Filho', 'Alencar', 'Lispector', 'Rosa',
+      'Veríssimo', 'Queiroz', 'Ramos', 'Amado', 'Lobato', 'Bandeira', 'Coralina',
+      'Assis', 'de Assis', 'José Alencar', 'Clarice', 'Drummond Andrade',
+      'Autor Teste 1', 'Autor Teste 2', 'Autor Teste 3', 'Autor Teste 4', 'Autor Teste 5',
+      'Autor Sem Obra', 'Outro Autor Sem Obra', 'Terceiro Sem Obra', 'Quarto Sem Obra',
+      'Quinto Sem Obra', 'Machado de Assis Junior', 'Machado de Assis Neto',
+    ];
+
+    for (let i = 0; i < nomesAutores.length; i++) {
+      const autorId = `aaaaaaaa-0000-0000-0000-${String(i + 1).padStart(4, '0')}`;
+      autores.push(autorId);
+      await qr.query(
+        `INSERT INTO "autores" ("id", "nome", "nacionalidade", "nascimento", "falecimento", "criadoEm", "atualizadoEm") VALUES
+          ($1, $2, 'Brasileira', $3, $4, datetime('now'), datetime('now'))`,
+        [
+          autorId,
+          nomesAutores[i],
+          i % 2 === 0 ? '1900-01-01' : null,
+          i > 40 ? null : '1950-01-01',
+        ],
+      );
+    }
+    console.log(`${autores.length} autores criados.`);
+
+    // 10. Obras (200+ obras com diferentes anos, alguns com ISBN, alguns sem)
+    const titulosObra = [
+      'Dom Casmurro', 'Memórias Póstumas de Brás Cubas', 'O Alienista', 'Quincas Borba',
+      'O Cortiço', 'Iracema', 'O Guarani', 'Ubirajara',
+      'A Hora da Estrela', 'Perto do Coração Selvagem', 'A Maçã no Escuro',
+      'Multiplicação', 'Sertão: Narrativas do Interior', 'O Sertão das Letras',
+      'Canudos: História de uma Guerra', 'Guerra dos Canudos', 'Os Sertões',
+      'Machado: Uma Biografia', 'Vidas Secas', 'São Bernardo',
+      'Angústia', 'Feliz Ano Novo', 'O Quinze',
+      'Dona Flor e Seus Dois Maridos', 'Tenda dos Milagres', 'Capitães da Areia',
+      'Mar Morto', 'Onde Andarás Doces Crianças?',
+      'Pedro Páramo', 'Cem Anos de Solidão', 'O Amor nos Tempos do Cólera',
+      '1984', 'Dom Quixote', 'Orgulho e Preconceito', 'Jane Eyre',
+      'Wuthering Heights', 'Moby Dick', 'A Escarlate', 'O Iluminado',
+      'Cem Anos', 'A Cidade e as Serras', 'Os Lusíadas',
+      'Mensagem', 'Claraboia', 'Noite Sem Fim',
+      'O Amigo Secreto', 'A Rapariga do Mar', 'O Anjo de Pedra',
+      'A Casa da Certesa', 'O Ano da Morte de Ricardo Reis',
+      'Ensaio sobre a Cegueira', 'O Evangelho Segundo Jesus Cristo',
+      'A Viagem do Elefante', 'Todos os Nomes',
+      'O Homem Duplicado', 'As Intermitências da Morte',
+      'Sagarana', 'Corpo de Baile', 'Primeiras Estórias',
+      'A Hora e a Vez de Augusto Matraga',
+      'O Trapalhão', 'A Leiteira', 'Fogo Morto',
+      'Grande Sertão: Veredas', 'Sagarana', 'Campo Geral',
+      'Macunaíma', 'Mario de Andrade', 'Paulicéia Desvairada',
+      'Poesias', 'Claridade', 'Antologia Poética',
+      'Machado de Assis: Contos', 'Contos Completos', 'Histórias da Meia-Noite',
+    ];
+
+    const estadosExemplar = [
+      'DISPONIVEL', 'DISPONIVEL', 'DISPONIVEL', 'DISPONIVEL',
+      'EMPRESTADO', 'EMPRESTADO',
+      'DESGASTADO', 'DESGASTADO',
+      'DESCARTADO',
+    ];
+
+    let exemplarCounter = 1;
+    for (let i = 0; i < titulosObra.length; i++) {
+      const obraId = `bbbbbbbb-0000-0000-0000-${String(i + 1).padStart(4, '0')}`;
+      const autorId = autores[i % autores.length];
+      const ano = 1850 + (i % 150);
+      const isbn = i % 3 === 0 ? null : `978-${85 + (i % 10)}-${300 + i}-${100 + (i % 50)}`;
+
+      await qr.query(
+        `INSERT INTO "obras" ("id", "titulo", "isbn", "anoPublicacao", "autorId", "criadoEm", "atualizadoEm") VALUES
+          ($1, $2, $3, $4, $5, datetime('now'), datetime('now'))`,
+        [obraId, titulosObra[i], isbn, ano, autorId],
+      );
+
+      // 10b. Exemplares para cada obra (2-5 por obra)
+      const numExemplares = 2 + (i % 4);
+      for (let j = 0; j < numExemplares; j++) {
+        const exemplarId = `cccccccc-0000-0000-0000-${String(exemplarCounter).padStart(4, '0')}`;
+        const tombo = `T-${String(10000 + exemplarCounter).padStart(6, '0')}`;
+        const estado = estadosExemplar[(i + j) % estadosExemplar.length];
+        await qr.query(
+          `INSERT INTO "exemplares" ("id", "tombo", "estado", "obraId", "criadoEm", "atualizadoEm") VALUES
+            ($1, $2, $3, $4, datetime('now'), datetime('now'))`,
+          [exemplarId, tombo, estado, obraId],
+        );
+        exemplarCounter++;
+      }
+    }
+    console.log(`${titulosObra.length} obras e ${exemplarCounter - 1} exemplares criados.`);
+
     console.log('=== Seed concluído com sucesso ===');
   } catch (err) {
     console.error('Erro no seed:', err);
