@@ -1,0 +1,4535 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/denuncias": {
+      "post": {
+        "operationId": "DenunciasController_criar",
+        "parameters": [
+          {
+            "name": "x-usuario-id",
+            "in": "header",
+            "description": "Id do usuário que executa a ação (usado no histórico de status)",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-tipo-usuario",
+            "in": "header",
+            "description": "Tipo do usuário: cidadao (padrão), atendente ou administrador",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CriarDenunciaDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Denúncia cadastrada com status `recebida`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DenunciaResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Cadastra uma denúncia (autor opcional: denúncia anônima é permitida)",
+        "tags": [
+          "denuncias"
+        ]
+      },
+      "get": {
+        "operationId": "DenunciasController_listar",
+        "parameters": [
+          {
+            "name": "x-usuario-id",
+            "in": "header",
+            "description": "Id do usuário que executa a ação (usado no histórico de status)",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-tipo-usuario",
+            "in": "header",
+            "description": "Tipo do usuário: cidadao (padrão), atendente ou administrador",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListaDenunciasResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lista denúncias com filtros, busca e paginação (arquivadas ficam fora por padrão)",
+        "tags": [
+          "denuncias"
+        ]
+      }
+    },
+    "/denuncias/mapa": {
+      "get": {
+        "operationId": "DenunciasController_listarParaMapa",
+        "parameters": [
+          {
+            "name": "x-usuario-id",
+            "in": "header",
+            "description": "Id do usuário que executa a ação (usado no histórico de status)",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-tipo-usuario",
+            "in": "header",
+            "description": "Tipo do usuário: cidadao (padrão), atendente ou administrador",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DenunciaResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lista todas as denúncias ativas para exibição no mapa (sem paginação)",
+        "tags": [
+          "denuncias"
+        ]
+      }
+    },
+    "/denuncias/{id}": {
+      "get": {
+        "operationId": "DenunciasController_obterPorId",
+        "parameters": [
+          {
+            "name": "x-usuario-id",
+            "in": "header",
+            "description": "Id do usuário que executa a ação (usado no histórico de status)",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-tipo-usuario",
+            "in": "header",
+            "description": "Tipo do usuário: cidadao (padrão), atendente ou administrador",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DenunciaResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Denúncia não encontrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Busca uma denúncia pelo id",
+        "tags": [
+          "denuncias"
+        ]
+      },
+      "patch": {
+        "description": "Regra 6.3-1: enquanto o status for \"recebida\" o autor pode corrigir; depois disso só atendente ou administrador.",
+        "operationId": "DenunciasController_atualizar",
+        "parameters": [
+          {
+            "name": "x-usuario-id",
+            "in": "header",
+            "description": "Id do usuário que executa a ação (usado no histórico de status)",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-tipo-usuario",
+            "in": "header",
+            "description": "Tipo do usuário: cidadao (padrão), atendente ou administrador",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-tipo-usuario",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-usuario-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtualizarDenunciaDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DenunciaResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Denúncia não encontrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Denúncia em atendimento não pode ser alterada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Atualiza os dados de uma denúncia (status tem rota própria)",
+        "tags": [
+          "denuncias"
+        ]
+      },
+      "delete": {
+        "operationId": "DenunciasController_arquivar",
+        "parameters": [
+          {
+            "name": "x-usuario-id",
+            "in": "header",
+            "description": "Id do usuário que executa a ação (usado no histórico de status)",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-tipo-usuario",
+            "in": "header",
+            "description": "Tipo do usuário: cidadao (padrão), atendente ou administrador",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Denúncia arquivada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DenunciaResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Denúncia não encontrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Arquiva uma denúncia (não há exclusão física — decisão D2)",
+        "tags": [
+          "denuncias"
+        ]
+      }
+    },
+    "/denuncias/{id}/status": {
+      "patch": {
+        "description": "Transição inválida responde 409. Reabertura (resolvida -> recebida) é exclusiva do administrador e exige comentário.",
+        "operationId": "DenunciasController_alterarStatus",
+        "parameters": [
+          {
+            "name": "x-usuario-id",
+            "in": "header",
+            "description": "Id do usuário que executa a ação (usado no histórico de status)",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-tipo-usuario",
+            "in": "header",
+            "description": "Tipo do usuário: cidadao (padrão), atendente ou administrador",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-tipo-usuario",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-usuario-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtualizarStatusDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DenunciaResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Transição não permitida para este tipo de usuário",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Denúncia não encontrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Transição de status inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Muda o status seguindo o fluxo recebida -> encaminhada -> em_andamento -> resolvida",
+        "tags": [
+          "denuncias"
+        ]
+      }
+    },
+    "/denuncias/{id}/historico": {
+      "get": {
+        "operationId": "HistoricoStatusController_listarHistorico",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Id da denúncia",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/HistoricoStatusResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Denúncia não encontrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lista as mudanças de status de uma denúncia (ordenadas por data)",
+        "tags": [
+          "denuncias-historico"
+        ]
+      }
+    },
+    "/denuncias/{id}/linha-do-tempo": {
+      "get": {
+        "description": "Junta histórico de status, encaminhamentos e anexos em ordem cronológica (decisão D8 — consulta, não tabela).",
+        "operationId": "HistoricoStatusController_linhaDoTempo",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Id da denúncia",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinhaDoTempoResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Denúncia não encontrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Linha do tempo da denúncia (read model)",
+        "tags": [
+          "denuncias-historico"
+        ]
+      }
+    },
+    "/setores": {
+      "post": {
+        "operationId": "SetoresController_criar",
+        "parameters": [
+          {
+            "name": "x-tipo-usuario",
+            "in": "header",
+            "description": "Tipo do usuário: cidadao (padrão), atendente ou administrador",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CriarSetorDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Setor cadastrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetorResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Já existe setor com este nome",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Cadastra um setor (apenas administrador)",
+        "tags": [
+          "setores"
+        ]
+      },
+      "get": {
+        "operationId": "SetoresController_listar",
+        "parameters": [
+          {
+            "name": "x-tipo-usuario",
+            "in": "header",
+            "description": "Tipo do usuário: cidadao (padrão), atendente ou administrador",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListaSetoresResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lista setores com paginação (inativos ficam fora por padrão)",
+        "tags": [
+          "setores"
+        ]
+      }
+    },
+    "/setores/{id}": {
+      "get": {
+        "operationId": "SetoresController_obterPorId",
+        "parameters": [
+          {
+            "name": "x-tipo-usuario",
+            "in": "header",
+            "description": "Tipo do usuário: cidadao (padrão), atendente ou administrador",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetorResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Setor não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Busca um setor pelo id",
+        "tags": [
+          "setores"
+        ]
+      },
+      "patch": {
+        "operationId": "SetoresController_atualizar",
+        "parameters": [
+          {
+            "name": "x-tipo-usuario",
+            "in": "header",
+            "description": "Tipo do usuário: cidadao (padrão), atendente ou administrador",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtualizarSetorDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetorResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Setor não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Já existe setor com este nome",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Atualiza os dados de um setor (apenas administrador)",
+        "tags": [
+          "setores"
+        ]
+      }
+    },
+    "/setores/{id}/desativar": {
+      "patch": {
+        "description": "Não há exclusão física: setores com encaminhamentos precisam existir para preservar o histórico (política RESTRICT).",
+        "operationId": "SetoresController_desativar",
+        "parameters": [
+          {
+            "name": "x-tipo-usuario",
+            "in": "header",
+            "description": "Tipo do usuário: cidadao (padrão), atendente ou administrador",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Setor desativado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetorResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Setor não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Desativa um setor",
+        "tags": [
+          "setores"
+        ]
+      }
+    },
+    "/cidadaos": {
+      "post": {
+        "operationId": "CidadaosController_criar",
+        "parameters": [
+          {
+            "name": "x-tipo-usuario",
+            "in": "header",
+            "description": "Tipo do usuário: cidadao (padrão), atendente ou administrador",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CriarCidadaoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Cidadão cadastrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CidadaoResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Tipo de usuário sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "E-mail ou CPF já cadastrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Cadastra um cidadão",
+        "tags": [
+          "cidadaos"
+        ]
+      },
+      "get": {
+        "operationId": "CidadaosController_listar",
+        "parameters": [
+          {
+            "name": "x-tipo-usuario",
+            "in": "header",
+            "description": "Tipo do usuário: cidadao (padrão), atendente ou administrador",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CidadaoResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Tipo de usuário sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lista cidadãos (atendente ou administrador)",
+        "tags": [
+          "cidadaos"
+        ]
+      }
+    },
+    "/cidadaos/{id}": {
+      "get": {
+        "operationId": "CidadaosController_obter",
+        "parameters": [
+          {
+            "name": "x-tipo-usuario",
+            "in": "header",
+            "description": "Tipo do usuário: cidadao (padrão), atendente ou administrador",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CidadaoResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Tipo de usuário sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Cidadão não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Busca um cidadão pelo id",
+        "tags": [
+          "cidadaos"
+        ]
+      },
+      "patch": {
+        "operationId": "CidadaosController_atualizar",
+        "parameters": [
+          {
+            "name": "x-tipo-usuario",
+            "in": "header",
+            "description": "Tipo do usuário: cidadao (padrão), atendente ou administrador",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtualizarCidadaoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CidadaoResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Tipo de usuário sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Cidadão não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "E-mail ou CPF já cadastrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Atualiza um cidadão (administrador)",
+        "tags": [
+          "cidadaos"
+        ]
+      },
+      "delete": {
+        "operationId": "CidadaosController_desativar",
+        "parameters": [
+          {
+            "name": "x-tipo-usuario",
+            "in": "header",
+            "description": "Tipo do usuário: cidadao (padrão), atendente ou administrador",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cidadão desativado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CidadaoResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Tipo de usuário sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Cidadão não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Desativa um cidadão (sem exclusão física)",
+        "tags": [
+          "cidadaos"
+        ]
+      }
+    },
+    "/atendentes": {
+      "post": {
+        "operationId": "AtendentesController_criar",
+        "parameters": [
+          {
+            "name": "x-tipo-usuario",
+            "in": "header",
+            "description": "Tipo do usuário: cidadao (padrão), atendente ou administrador",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CriarAtendenteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Atendente cadastrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AtendenteResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Tipo de usuário sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Setor de lotação não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "E-mail ou matrícula já cadastrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Cadastra um atendente (administrador)",
+        "tags": [
+          "atendentes"
+        ]
+      },
+      "get": {
+        "operationId": "AtendentesController_listar",
+        "parameters": [
+          {
+            "name": "x-tipo-usuario",
+            "in": "header",
+            "description": "Tipo do usuário: cidadao (padrão), atendente ou administrador",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AtendenteResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Tipo de usuário sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lista atendentes (atendente ou administrador)",
+        "tags": [
+          "atendentes"
+        ]
+      }
+    },
+    "/atendentes/{id}": {
+      "get": {
+        "operationId": "AtendentesController_obter",
+        "parameters": [
+          {
+            "name": "x-tipo-usuario",
+            "in": "header",
+            "description": "Tipo do usuário: cidadao (padrão), atendente ou administrador",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AtendenteResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Tipo de usuário sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Atendente não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Busca um atendente pelo id",
+        "tags": [
+          "atendentes"
+        ]
+      },
+      "patch": {
+        "operationId": "AtendentesController_atualizar",
+        "parameters": [
+          {
+            "name": "x-tipo-usuario",
+            "in": "header",
+            "description": "Tipo do usuário: cidadao (padrão), atendente ou administrador",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtualizarAtendenteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AtendenteResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Tipo de usuário sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Atendente ou setor não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "E-mail ou matrícula já cadastrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Atualiza um atendente (administrador)",
+        "tags": [
+          "atendentes"
+        ]
+      },
+      "delete": {
+        "operationId": "AtendentesController_desativar",
+        "parameters": [
+          {
+            "name": "x-tipo-usuario",
+            "in": "header",
+            "description": "Tipo do usuário: cidadao (padrão), atendente ou administrador",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Atendente desativado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AtendenteResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Tipo de usuário sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Atendente não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Desativa um atendente (sem exclusão física)",
+        "tags": [
+          "atendentes"
+        ]
+      }
+    },
+    "/administradores": {
+      "post": {
+        "description": "nivelAcesso: 1 = padrão; 2 = pode reabrir denúncia resolvida.",
+        "operationId": "AdministradoresController_criar",
+        "parameters": [
+          {
+            "name": "x-tipo-usuario",
+            "in": "header",
+            "description": "Tipo do usuário: cidadao (padrão), atendente ou administrador",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CriarAdministradorDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Administrador cadastrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdministradorResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Tipo de usuário sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "E-mail já cadastrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Cadastra um administrador (administrador)",
+        "tags": [
+          "administradores"
+        ]
+      },
+      "get": {
+        "operationId": "AdministradoresController_listar",
+        "parameters": [
+          {
+            "name": "x-tipo-usuario",
+            "in": "header",
+            "description": "Tipo do usuário: cidadao (padrão), atendente ou administrador",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AdministradorResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Tipo de usuário sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lista administradores (apenas administrador)",
+        "tags": [
+          "administradores"
+        ]
+      }
+    },
+    "/administradores/{id}": {
+      "get": {
+        "operationId": "AdministradoresController_obter",
+        "parameters": [
+          {
+            "name": "x-tipo-usuario",
+            "in": "header",
+            "description": "Tipo do usuário: cidadao (padrão), atendente ou administrador",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdministradorResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Tipo de usuário sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Administrador não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Busca um administrador pelo id",
+        "tags": [
+          "administradores"
+        ]
+      },
+      "patch": {
+        "operationId": "AdministradoresController_atualizar",
+        "parameters": [
+          {
+            "name": "x-tipo-usuario",
+            "in": "header",
+            "description": "Tipo do usuário: cidadao (padrão), atendente ou administrador",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtualizarAdministradorDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdministradorResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Tipo de usuário sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Administrador não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "E-mail já cadastrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Atualiza um administrador (administrador)",
+        "tags": [
+          "administradores"
+        ]
+      },
+      "delete": {
+        "operationId": "AdministradoresController_desativar",
+        "parameters": [
+          {
+            "name": "x-tipo-usuario",
+            "in": "header",
+            "description": "Tipo do usuário: cidadao (padrão), atendente ou administrador",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Administrador desativado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdministradorResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Tipo de usuário sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Administrador não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Desativa um administrador (sem exclusão física)",
+        "tags": [
+          "administradores"
+        ]
+      }
+    },
+    "/usuarios": {
+      "get": {
+        "operationId": "UsuariosController_listar",
+        "parameters": [
+          {
+            "name": "x-tipo-usuario",
+            "in": "header",
+            "description": "Tipo do usuário: cidadao (padrão), atendente ou administrador",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UsuarioResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Tipo de usuário sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lista usuários de qualquer tipo, com filtro por tipo, ativo e nome",
+        "tags": [
+          "usuarios"
+        ]
+      }
+    },
+    "/usuarios/{id}": {
+      "get": {
+        "operationId": "UsuariosController_obter",
+        "parameters": [
+          {
+            "name": "x-tipo-usuario",
+            "in": "header",
+            "description": "Tipo do usuário: cidadao (padrão), atendente ou administrador",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Tipo de usuário sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Usuário não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Busca um usuário pelo id, em qualquer tipo",
+        "tags": [
+          "usuarios"
+        ]
+      }
+    },
+    "/denuncias/{id}/encaminhamentos": {
+      "post": {
+        "description": "Na mesma transação: cria o encaminhamento, define o setorAtualId da denúncia e dispara a transição de status.",
+        "operationId": "EncaminhamentosController_criar",
+        "parameters": [
+          {
+            "name": "x-usuario-id",
+            "in": "header",
+            "description": "Id do atendente que está encaminhando",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-tipo-usuario",
+            "in": "header",
+            "description": "Tipo do usuário: cidadao (padrão), atendente ou administrador",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Id da denúncia",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-tipo-usuario",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-usuario-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CriarEncaminhamentoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EncaminhamentoResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Denúncia ou setor não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Setor inativo, denúncia arquivada ou reencaminhamento",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Encaminha a denúncia para um setor e move o status para \"encaminhada\"",
+        "tags": [
+          "encaminhamentos"
+        ]
+      },
+      "get": {
+        "operationId": "EncaminhamentosController_listar",
+        "parameters": [
+          {
+            "name": "x-usuario-id",
+            "in": "header",
+            "description": "Id do atendente que está encaminhando",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-tipo-usuario",
+            "in": "header",
+            "description": "Tipo do usuário: cidadao (padrão), atendente ou administrador",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Id da denúncia",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListaEncaminhamentosResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Denúncia não encontrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lista os encaminhamentos de uma denúncia",
+        "tags": [
+          "encaminhamentos"
+        ]
+      }
+    },
+    "/encaminhamentos/{id}/aceite": {
+      "patch": {
+        "operationId": "EncaminhamentosController_aceitar",
+        "parameters": [
+          {
+            "name": "x-usuario-id",
+            "in": "header",
+            "description": "Id do atendente que está encaminhando",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-tipo-usuario",
+            "in": "header",
+            "description": "Tipo do usuário: cidadao (padrão), atendente ou administrador",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EncaminhamentoResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Encaminhamento não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Encaminhamento já aceito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Confirma o recebimento (aceite) do encaminhamento",
+        "tags": [
+          "encaminhamentos"
+        ]
+      }
+    },
+    "/denuncias/{id}/anexos": {
+      "post": {
+        "description": "Decisão D4: anexo por URL (sem upload). Limite de 5 anexos por denúncia (409); denúncia arquivada responde 409.",
+        "operationId": "AnexosController_criar",
+        "parameters": [
+          {
+            "name": "x-usuario-id",
+            "in": "header",
+            "description": "Id do usuário que envia o anexo (opcional)",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-tipo-usuario",
+            "in": "header",
+            "description": "Tipo do usuário: cidadao (padrão), atendente ou administrador",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Id da denúncia",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-usuario-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CriarAnexoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Anexo cadastrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnexoResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos (URL, tipo ou formato)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Denúncia não encontrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Limite de 5 anexos ou denúncia arquivada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Adiciona um anexo (URL) à denúncia",
+        "tags": [
+          "anexos"
+        ]
+      },
+      "get": {
+        "operationId": "AnexosController_listar",
+        "parameters": [
+          {
+            "name": "x-usuario-id",
+            "in": "header",
+            "description": "Id do usuário que envia o anexo (opcional)",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-tipo-usuario",
+            "in": "header",
+            "description": "Tipo do usuário: cidadao (padrão), atendente ou administrador",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Id da denúncia",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AnexoResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos (URL, tipo ou formato)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Denúncia não encontrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lista os anexos de uma denúncia",
+        "tags": [
+          "anexos"
+        ]
+      }
+    },
+    "/denuncias/{id}/anexos/{anexoId}": {
+      "delete": {
+        "operationId": "AnexosController_remover",
+        "parameters": [
+          {
+            "name": "x-usuario-id",
+            "in": "header",
+            "description": "Id do usuário que envia o anexo (opcional)",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-tipo-usuario",
+            "in": "header",
+            "description": "Tipo do usuário: cidadao (padrão), atendente ou administrador",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Id da denúncia",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "anexoId",
+            "required": true,
+            "in": "path",
+            "description": "Id do anexo",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Anexo removido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnexoResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos (URL, tipo ou formato)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Denúncia ou anexo não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Remove um anexo da denúncia (cidadão ou administrador)",
+        "tags": [
+          "anexos"
+        ]
+      }
+    },
+    "/obras": {
+      "post": {
+        "operationId": "ObrasController_criar",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CriarObraDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Obra criada com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObraResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Autor não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de regra de negócio",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Cadastra uma obra",
+        "tags": [
+          "obras"
+        ]
+      },
+      "get": {
+        "operationId": "ObrasController_listar",
+        "parameters": [
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "Busca por título",
+            "schema": {
+              "example": "dom",
+              "type": "string"
+            }
+          },
+          {
+            "name": "autorId",
+            "required": false,
+            "in": "query",
+            "description": "Filtrar por autor",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "de",
+            "required": false,
+            "in": "query",
+            "description": "Ano mínimo",
+            "schema": {
+              "example": 1850,
+              "type": "number"
+            }
+          },
+          {
+            "name": "ate",
+            "required": false,
+            "in": "query",
+            "description": "Ano máximo",
+            "schema": {
+              "example": 2000,
+              "type": "number"
+            }
+          },
+          {
+            "name": "pagina",
+            "required": false,
+            "in": "query",
+            "description": "Página",
+            "schema": {
+              "default": 1,
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limite",
+            "required": false,
+            "in": "query",
+            "description": "Itens por página (máx. 100)",
+            "schema": {
+              "default": 20,
+              "example": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista paginada de obras",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListaObrasResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Parâmetros de consulta inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lista obras com paginação e filtros opcionais",
+        "tags": [
+          "obras"
+        ]
+      }
+    },
+    "/obras/{id}": {
+      "get": {
+        "operationId": "ObrasController_obterPorId",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Obra encontrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObraResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Obra não encontrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Busca uma obra pelo id (com autor e exemplares)",
+        "tags": [
+          "obras"
+        ]
+      },
+      "patch": {
+        "operationId": "ObrasController_atualizar",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtualizarObraDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Obra atualizada com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObraResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Obra não encontrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de regra de negócio",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Atualiza uma obra",
+        "tags": [
+          "obras"
+        ]
+      },
+      "delete": {
+        "operationId": "ObrasController_remover",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Obra removida com sucesso"
+          },
+          "404": {
+            "description": "Obra não encontrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de regra de negócio",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Remove uma obra",
+        "tags": [
+          "obras"
+        ]
+      }
+    },
+    "/obras/diagnostico/nmais1": {
+      "get": {
+        "operationId": "ObrasController_nmais1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Lista 50 obras com N+1 (versão ruim)",
+        "tags": [
+          "obras"
+        ]
+      }
+    },
+    "/obras/diagnostico/nmais1-com-relations": {
+      "get": {
+        "operationId": "ObrasController_nmais1ComRelations",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Lista 50 obras com relations (versão boa)",
+        "tags": [
+          "obras"
+        ]
+      }
+    },
+    "/obras/diagnostico/e061/antes-de-1900": {
+      "get": {
+        "operationId": "ObrasController_e061AntesDe1900",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "obras"
+        ]
+      }
+    },
+    "/obras/diagnostico/e061/sertao": {
+      "get": {
+        "operationId": "ObrasController_e061Sertao",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "obras"
+        ]
+      }
+    },
+    "/obras/diagnostico/e061/sem-isbn": {
+      "get": {
+        "operationId": "ObrasController_e061SemIsbn",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "obras"
+        ]
+      }
+    },
+    "/obras/diagnostico/e061/dez-mais-recentes": {
+      "get": {
+        "operationId": "ObrasController_e061DezMaisRecentes",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "obras"
+        ]
+      }
+    },
+    "/obras/diagnostico/e061/total": {
+      "get": {
+        "operationId": "ObrasController_e061Total",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "obras"
+        ]
+      }
+    },
+    "/obras/diagnostico/e063/obras-por-autor": {
+      "get": {
+        "operationId": "ObrasController_e063ObrasPorAutor",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "obras"
+        ]
+      }
+    },
+    "/obras/diagnostico/e063/exemplares-por-estado": {
+      "get": {
+        "operationId": "ObrasController_e063ExemplaresPorEstado",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "obras"
+        ]
+      }
+    },
+    "/obras/diagnostico/e063/autores-sem-obra-leftjoin": {
+      "get": {
+        "operationId": "ObrasController_e063AutoresSemObraLeftJoin",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "obras"
+        ]
+      }
+    },
+    "/obras/diagnostico/e063/autores-sem-obra-notin": {
+      "get": {
+        "operationId": "ObrasController_e063AutoresSemObraNotIn",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "obras"
+        ]
+      }
+    },
+    "/obras/diagnostico/e063/obras-com-exemplar-disponivel": {
+      "get": {
+        "operationId": "ObrasController_e063ObrasComExemplarDisponivel",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "obras"
+        ]
+      }
+    },
+    "/exemplares": {
+      "post": {
+        "operationId": "ExemplaresController_criar",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CriarExemplarDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Exemplar criado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExemplarResposta"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Obra não encontrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de regra de negócio",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Cadastra um exemplar",
+        "tags": [
+          "exemplares"
+        ]
+      },
+      "get": {
+        "operationId": "ExemplaresController_listar",
+        "parameters": [
+          {
+            "name": "obraId",
+            "required": false,
+            "in": "query",
+            "description": "Filtrar por obra",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "estado",
+            "required": false,
+            "in": "query",
+            "description": "Filtrar por estado",
+            "schema": {
+              "enum": [
+                "DISPONIVEL",
+                "EMPRESTADO",
+                "DESGASTADO",
+                "DESCARTADO"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "pagina",
+            "required": false,
+            "in": "query",
+            "description": "Página (padrão: 1)",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "limite",
+            "required": false,
+            "in": "query",
+            "description": "Itens por página (máx. 100, padrão: 20)",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista paginada de exemplares",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListaExemplaresResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Parâmetros de consulta inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lista exemplares com paginação e filtros opcionais",
+        "tags": [
+          "exemplares"
+        ]
+      }
+    },
+    "/exemplares/{id}": {
+      "get": {
+        "operationId": "ExemplaresController_obterPorId",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Exemplar encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExemplarResposta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Exemplar não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Busca um exemplar pelo id (com título da obra)",
+        "tags": [
+          "exemplares"
+        ]
+      },
+      "patch": {
+        "operationId": "ExemplaresController_atualizar",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtualizarExemplarDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Exemplar atualizado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExemplarResposta"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Exemplar ou obra não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de regra de negócio",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Atualiza um exemplar",
+        "tags": [
+          "exemplares"
+        ]
+      },
+      "delete": {
+        "operationId": "ExemplaresController_remover",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Exemplar removido com sucesso"
+          },
+          "404": {
+            "description": "Exemplar não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de regra de negócio",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Remove um exemplar",
+        "tags": [
+          "exemplares"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Sistema Para Denunciar Problemas Urbanos",
+    "description": "API de denúncias de problemas urbanos",
+    "version": "1.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "schemas": {
+      "ErroDetalheDto": {
+        "type": "object",
+        "properties": {
+          "campo": {
+            "type": "string",
+            "example": "titulo",
+            "description": "Campo ou parâmetro que falhou"
+          },
+          "mensagem": {
+            "type": "string",
+            "example": "O titulo deve ter entre 5 e 100 caracteres"
+          }
+        },
+        "required": [
+          "campo",
+          "mensagem"
+        ]
+      },
+      "ErroDto": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "example": 400
+          },
+          "mensagem": {
+            "type": "string",
+            "example": "Dados inválidos"
+          },
+          "detalhes": {
+            "description": "Preenchido quando o erro é de validação por campo",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ErroDetalheDto"
+            }
+          }
+        },
+        "required": [
+          "statusCode",
+          "mensagem"
+        ]
+      },
+      "CriarDenunciaDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "DenunciaResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "titulo": {
+            "type": "string",
+            "example": "Buraco na Rua Principal"
+          },
+          "descricao": {
+            "type": "string",
+            "example": "Buraco grande em frente ao número 100."
+          },
+          "categoria": {
+            "type": "string",
+            "enum": [
+              "buraco",
+              "poste",
+              "lixo",
+              "agua",
+              "outros"
+            ],
+            "example": "buraco"
+          },
+          "latitude": {
+            "type": "number",
+            "example": -8.9016
+          },
+          "longitude": {
+            "type": "number",
+            "example": -36.4926
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "recebida",
+              "encaminhada",
+              "em_andamento",
+              "resolvida"
+            ],
+            "example": "recebida"
+          },
+          "cidadaoId": {
+            "type": "object",
+            "nullable": true,
+            "format": "uuid",
+            "description": "Autor da denúncia (nulo se anônima)"
+          },
+          "setorAtualId": {
+            "type": "object",
+            "nullable": true,
+            "format": "uuid",
+            "description": "Setor responsável atual"
+          },
+          "setorAtual": {
+            "type": "object",
+            "nullable": true
+          },
+          "categorias": {
+            "type": "object",
+            "nullable": true
+          },
+          "arquivada": {
+            "type": "boolean",
+            "example": false
+          },
+          "arquivadaEm": {
+            "type": "object",
+            "nullable": true
+          },
+          "criadoEm": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-09-29T15:00:00.000Z"
+          },
+          "atualizadoEm": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-09-29T15:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "titulo",
+          "descricao",
+          "categoria",
+          "latitude",
+          "longitude",
+          "status",
+          "cidadaoId",
+          "setorAtualId",
+          "setorAtual",
+          "categorias",
+          "arquivada",
+          "arquivadaEm",
+          "criadoEm",
+          "atualizadoEm"
+        ]
+      },
+      "ListaDenunciasResponseDto": {
+        "type": "object",
+        "properties": {
+          "pagina": {
+            "type": "number",
+            "example": 1
+          },
+          "limite": {
+            "type": "number",
+            "example": 20
+          },
+          "total": {
+            "type": "number",
+            "example": 42
+          },
+          "totalPaginas": {
+            "type": "number",
+            "example": 3
+          },
+          "itens": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DenunciaResponseDto"
+            }
+          }
+        },
+        "required": [
+          "pagina",
+          "limite",
+          "total",
+          "totalPaginas",
+          "itens"
+        ]
+      },
+      "AtualizarStatusDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "AtualizarDenunciaDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "HistoricoStatusResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "denunciaId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "statusAnterior": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "recebida",
+              "encaminhada",
+              "em_andamento",
+              "resolvida"
+            ],
+            "example": null,
+            "description": "`null` na criação da denúncia`"
+          },
+          "statusAtual": {
+            "type": "string",
+            "enum": [
+              "recebida",
+              "encaminhada",
+              "em_andamento",
+              "resolvida"
+            ],
+            "example": "encaminhada"
+          },
+          "alteradoPorId": {
+            "type": "object",
+            "nullable": true,
+            "format": "uuid",
+            "example": null,
+            "description": "`null` = sistema"
+          },
+          "alteradoPorTipo": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "cidadao",
+              "atendente",
+              "administrador"
+            ],
+            "example": "atendente",
+            "description": "Papel de quem alterou (resolvido a partir do usuário)"
+          },
+          "comentario": {
+            "type": "object",
+            "nullable": true,
+            "example": "Denúncia reaberta para revisão"
+          },
+          "dataAlteracao": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-09-29T15:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "denunciaId",
+          "statusAnterior",
+          "statusAtual",
+          "alteradoPorId",
+          "alteradoPorTipo",
+          "comentario",
+          "dataAlteracao"
+        ]
+      },
+      "EventoLinhaTempoDto": {
+        "type": "object",
+        "properties": {
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "status",
+              "encaminhamento",
+              "anexo"
+            ]
+          },
+          "em": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-09-29T15:00:00.000Z"
+          },
+          "por": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "cidadao",
+              "atendente",
+              "administrador"
+            ],
+            "example": "cidadao",
+            "description": "Papel de quem executou a ação (`null` = sistema)"
+          },
+          "de": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "recebida",
+              "encaminhada",
+              "em_andamento",
+              "resolvida"
+            ],
+            "example": null
+          },
+          "para": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "recebida",
+              "encaminhada",
+              "em_andamento",
+              "resolvida"
+            ],
+            "example": "recebida"
+          },
+          "comentario": {
+            "type": "object",
+            "nullable": true,
+            "example": "Denúncia reaberta para revisão"
+          },
+          "setor": {
+            "type": "object",
+            "nullable": true,
+            "example": "Obras",
+            "description": "Nome do setor de destino"
+          },
+          "observacao": {
+            "type": "object",
+            "nullable": true,
+            "example": "Encaminhado para vistoria."
+          },
+          "url": {
+            "type": "object",
+            "nullable": true,
+            "example": "https://cdn.exemplo.com/foto.jpg"
+          },
+          "descricao": {
+            "type": "object",
+            "nullable": true,
+            "example": "Foto do buraco"
+          }
+        },
+        "required": [
+          "tipo",
+          "em",
+          "por",
+          "de",
+          "para",
+          "comentario",
+          "setor",
+          "observacao",
+          "url",
+          "descricao"
+        ]
+      },
+      "LinhaDoTempoResponseDto": {
+        "type": "object",
+        "properties": {
+          "denunciaId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "statusAtual": {
+            "type": "string",
+            "enum": [
+              "recebida",
+              "encaminhada",
+              "em_andamento",
+              "resolvida"
+            ],
+            "example": "em_andamento"
+          },
+          "eventos": {
+            "description": "Ordenado por data crescente",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EventoLinhaTempoDto"
+            }
+          }
+        },
+        "required": [
+          "denunciaId",
+          "statusAtual",
+          "eventos"
+        ]
+      },
+      "CriarSetorDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "SetorResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nome": {
+            "type": "string",
+            "example": "Obras"
+          },
+          "descricao": {
+            "type": "object",
+            "nullable": true,
+            "example": "Responsável por buracos, calçadas e vias."
+          },
+          "email": {
+            "type": "object",
+            "nullable": true,
+            "example": "obras@cidade.gov.br"
+          },
+          "ativo": {
+            "type": "boolean",
+            "example": true
+          },
+          "criadoEm": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-09-29T15:00:00.000Z"
+          },
+          "atualizadoEm": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-09-29T15:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "nome",
+          "descricao",
+          "email",
+          "ativo",
+          "criadoEm",
+          "atualizadoEm"
+        ]
+      },
+      "ListaSetoresResponseDto": {
+        "type": "object",
+        "properties": {
+          "itens": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SetorResponseDto"
+            }
+          },
+          "pagina": {
+            "type": "number",
+            "example": 1
+          },
+          "limite": {
+            "type": "number",
+            "example": 20
+          },
+          "total": {
+            "type": "number",
+            "example": 5
+          },
+          "totalPaginas": {
+            "type": "number",
+            "example": 1
+          }
+        },
+        "required": [
+          "itens",
+          "pagina",
+          "limite",
+          "total",
+          "totalPaginas"
+        ]
+      },
+      "AtualizarSetorDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CriarCidadaoDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CidadaoResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "cidadao",
+              "atendente",
+              "administrador"
+            ],
+            "example": "cidadao"
+          },
+          "nome": {
+            "type": "string",
+            "example": "Ana Souza"
+          },
+          "email": {
+            "type": "string",
+            "example": "ana@exemplo.com"
+          },
+          "telefone": {
+            "type": "object",
+            "nullable": true,
+            "example": "(81) 99999-0000"
+          },
+          "ativo": {
+            "type": "boolean",
+            "example": true
+          },
+          "criadoEm": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-09-29T15:00:00.000Z"
+          },
+          "atualizadoEm": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-09-29T15:00:00.000Z"
+          },
+          "cpf": {
+            "type": "object",
+            "nullable": true,
+            "example": "000.000.000-00"
+          },
+          "bairro": {
+            "type": "object",
+            "nullable": true,
+            "example": "Centro"
+          }
+        },
+        "required": [
+          "id",
+          "tipo",
+          "nome",
+          "email",
+          "telefone",
+          "ativo",
+          "criadoEm",
+          "atualizadoEm",
+          "cpf",
+          "bairro"
+        ]
+      },
+      "AtualizarCidadaoDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CriarAtendenteDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "AtendenteResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "cidadao",
+              "atendente",
+              "administrador"
+            ],
+            "example": "cidadao"
+          },
+          "nome": {
+            "type": "string",
+            "example": "Ana Souza"
+          },
+          "email": {
+            "type": "string",
+            "example": "ana@exemplo.com"
+          },
+          "telefone": {
+            "type": "object",
+            "nullable": true,
+            "example": "(81) 99999-0000"
+          },
+          "ativo": {
+            "type": "boolean",
+            "example": true
+          },
+          "criadoEm": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-09-29T15:00:00.000Z"
+          },
+          "atualizadoEm": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-09-29T15:00:00.000Z"
+          },
+          "matricula": {
+            "type": "object",
+            "nullable": true,
+            "example": "12345"
+          },
+          "setorId": {
+            "type": "object",
+            "nullable": true,
+            "format": "uuid",
+            "example": "a3f1c9d2-0f4a-4a1e-9a5c-2b7d6e8c1a01",
+            "description": "Setor de lotação do atendente (SET NULL ao excluir o setor)"
+          }
+        },
+        "required": [
+          "id",
+          "tipo",
+          "nome",
+          "email",
+          "telefone",
+          "ativo",
+          "criadoEm",
+          "atualizadoEm",
+          "matricula",
+          "setorId"
+        ]
+      },
+      "AtualizarAtendenteDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CriarAdministradorDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "AdministradorResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "cidadao",
+              "atendente",
+              "administrador"
+            ],
+            "example": "cidadao"
+          },
+          "nome": {
+            "type": "string",
+            "example": "Ana Souza"
+          },
+          "email": {
+            "type": "string",
+            "example": "ana@exemplo.com"
+          },
+          "telefone": {
+            "type": "object",
+            "nullable": true,
+            "example": "(81) 99999-0000"
+          },
+          "ativo": {
+            "type": "boolean",
+            "example": true
+          },
+          "criadoEm": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-09-29T15:00:00.000Z"
+          },
+          "atualizadoEm": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-09-29T15:00:00.000Z"
+          },
+          "nivelAcesso": {
+            "type": "number",
+            "example": 1,
+            "minimum": 1,
+            "maximum": 2,
+            "description": "1 = padrão; 2 = pode reabrir denúncia resolvida"
+          }
+        },
+        "required": [
+          "id",
+          "tipo",
+          "nome",
+          "email",
+          "telefone",
+          "ativo",
+          "criadoEm",
+          "atualizadoEm",
+          "nivelAcesso"
+        ]
+      },
+      "AtualizarAdministradorDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "UsuarioResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "cidadao",
+              "atendente",
+              "administrador"
+            ],
+            "example": "cidadao"
+          },
+          "nome": {
+            "type": "string",
+            "example": "Ana Souza"
+          },
+          "email": {
+            "type": "string",
+            "example": "ana@exemplo.com"
+          },
+          "telefone": {
+            "type": "object",
+            "nullable": true,
+            "example": "(81) 99999-0000"
+          },
+          "ativo": {
+            "type": "boolean",
+            "example": true
+          },
+          "criadoEm": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-09-29T15:00:00.000Z"
+          },
+          "atualizadoEm": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-09-29T15:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "tipo",
+          "nome",
+          "email",
+          "telefone",
+          "ativo",
+          "criadoEm",
+          "atualizadoEm"
+        ]
+      },
+      "CriarEncaminhamentoDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "EncaminhamentoResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "denunciaId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "setorDestinoId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "enviadoPorId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "observacao": {
+            "type": "object",
+            "nullable": true,
+            "example": "Encaminhado para vistoria."
+          },
+          "dataEncaminhamento": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-10-05T14:00:00.000Z"
+          },
+          "aceite": {
+            "type": "object",
+            "nullable": true,
+            "example": null,
+            "description": "Preenchido quando o setor confirma o recebimento"
+          }
+        },
+        "required": [
+          "id",
+          "denunciaId",
+          "setorDestinoId",
+          "enviadoPorId",
+          "observacao",
+          "dataEncaminhamento",
+          "aceite"
+        ]
+      },
+      "ListaEncaminhamentosResponseDto": {
+        "type": "object",
+        "properties": {
+          "itens": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EncaminhamentoResponseDto"
+            }
+          },
+          "pagina": {
+            "type": "number",
+            "example": 1
+          },
+          "limite": {
+            "type": "number",
+            "example": 20
+          },
+          "total": {
+            "type": "number",
+            "example": 3
+          },
+          "totalPaginas": {
+            "type": "number",
+            "example": 1
+          }
+        },
+        "required": [
+          "itens",
+          "pagina",
+          "limite",
+          "total",
+          "totalPaginas"
+        ]
+      },
+      "CriarAnexoDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "AnexoResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "denunciaId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "url": {
+            "type": "string",
+            "example": "https://cdn.exemplo.com/foto.jpg",
+            "maxLength": 500
+          },
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "imagem",
+              "documento"
+            ],
+            "example": "imagem"
+          },
+          "descricao": {
+            "type": "object",
+            "nullable": true,
+            "example": "Foto do buraco"
+          },
+          "enviadoPorId": {
+            "type": "object",
+            "nullable": true,
+            "format": "uuid",
+            "example": null,
+            "description": "Usuário que enviou (opcional)"
+          },
+          "criadoEm": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-09-29T15:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "denunciaId",
+          "url",
+          "tipo",
+          "descricao",
+          "enviadoPorId",
+          "criadoEm"
+        ]
+      },
+      "CriarObraDto": {
+        "type": "object",
+        "properties": {
+          "titulo": {
+            "type": "string",
+            "example": "Dom Casmurro",
+            "description": "Título da obra"
+          },
+          "isbn": {
+            "type": "object",
+            "example": "978-85-359-1477-7",
+            "description": "ISBN da obra"
+          },
+          "anoPublicacao": {
+            "type": "object",
+            "example": 1899,
+            "description": "Ano de publicação"
+          },
+          "autorId": {
+            "type": "string",
+            "description": "ID do autor"
+          }
+        },
+        "required": [
+          "titulo",
+          "autorId"
+        ]
+      },
+      "ObraAutorResumoDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nome": {
+            "type": "string",
+            "example": "Machado de Assis"
+          }
+        },
+        "required": [
+          "id",
+          "nome"
+        ]
+      },
+      "ObraResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "titulo": {
+            "type": "string",
+            "example": "Dom Casmurro"
+          },
+          "isbn": {
+            "type": "object",
+            "nullable": true,
+            "example": "978-85-359-1477-7"
+          },
+          "anoPublicacao": {
+            "type": "object",
+            "nullable": true,
+            "example": 1899
+          },
+          "autorId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "autor": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ObraAutorResumoDto"
+              }
+            ]
+          },
+          "criadoEm": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-09-29T15:00:00.000Z"
+          },
+          "atualizadoEm": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-09-29T15:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "titulo",
+          "isbn",
+          "anoPublicacao",
+          "autorId",
+          "autor",
+          "criadoEm",
+          "atualizadoEm"
+        ]
+      },
+      "ListaObrasResponseDto": {
+        "type": "object",
+        "properties": {
+          "itens": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ObraResponseDto"
+            }
+          },
+          "pagina": {
+            "type": "number",
+            "example": 1
+          },
+          "limite": {
+            "type": "number",
+            "example": 20
+          },
+          "total": {
+            "type": "number",
+            "example": 200
+          },
+          "totalPaginas": {
+            "type": "number",
+            "example": 10
+          }
+        },
+        "required": [
+          "itens",
+          "pagina",
+          "limite",
+          "total",
+          "totalPaginas"
+        ]
+      },
+      "AtualizarObraDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CriarExemplarDto": {
+        "type": "object",
+        "properties": {
+          "tombo": {
+            "type": "string",
+            "example": "T-000123",
+            "description": "Tombo do exemplar (3-20 caracteres: maiúsculas, números e hífen)"
+          },
+          "estado": {
+            "type": "string",
+            "example": "DISPONIVEL",
+            "enum": [
+              "DISPONIVEL",
+              "EMPRESTADO",
+              "DESGASTADO",
+              "DESCARTADO"
+            ],
+            "description": "Estado físico do exemplar"
+          },
+          "obraId": {
+            "type": "string",
+            "description": "ID da obra associada"
+          },
+          "dataAquisicao": {
+            "type": "string",
+            "example": "2026-01-15",
+            "description": "Data de aquisição (não pode ser futura)"
+          }
+        },
+        "required": [
+          "tombo",
+          "estado",
+          "obraId"
+        ]
+      },
+      "ExemplarResposta": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tombo": {
+            "type": "string",
+            "example": "T-000123"
+          },
+          "estado": {
+            "type": "string",
+            "example": "DISPONIVEL",
+            "enum": [
+              "DISPONIVEL",
+              "EMPRESTADO",
+              "DESGASTADO",
+              "DESCARTADO"
+            ]
+          },
+          "obraTitulo": {
+            "type": "string",
+            "description": "Título da obra associada (não o obraId)"
+          },
+          "dataAquisicao": {
+            "type": "object",
+            "example": "2026-01-15"
+          },
+          "criadoEm": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-09-29T15:00:00.000Z"
+          },
+          "atualizadoEm": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-09-29T15:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "tombo",
+          "estado",
+          "obraTitulo",
+          "criadoEm",
+          "atualizadoEm"
+        ]
+      },
+      "ListaExemplaresResponseDto": {
+        "type": "object",
+        "properties": {
+          "itens": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExemplarResposta"
+            }
+          },
+          "pagina": {
+            "type": "number",
+            "example": 1
+          },
+          "limite": {
+            "type": "number",
+            "example": 20
+          },
+          "total": {
+            "type": "number",
+            "example": 200
+          },
+          "totalPaginas": {
+            "type": "number",
+            "example": 10
+          }
+        },
+        "required": [
+          "itens",
+          "pagina",
+          "limite",
+          "total",
+          "totalPaginas"
+        ]
+      },
+      "AtualizarExemplarDto": {
+        "type": "object",
+        "properties": {}
+      }
+    }
+  }
+}
