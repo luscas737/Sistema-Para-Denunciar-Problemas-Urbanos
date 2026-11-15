@@ -3,6 +3,8 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -11,7 +13,6 @@ import {
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ObrasService } from './obras.service';
-import { paraObraDto } from './obras.mapper';
 import {
   AtualizarObraDto,
   CriarObraDto,
@@ -19,6 +20,7 @@ import {
   ListaObrasResponseDto,
   ObraResponseDto,
 } from './dto/obra.dto';
+import { ErroDto } from '../common/dto/erro.dto';
 
 @ApiTags('obras')
 @Controller('obras')
@@ -26,52 +28,69 @@ export class ObrasController {
   constructor(private readonly obrasService: ObrasService) {}
 
   @Post()
+  @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Cadastra uma obra' })
-  @ApiResponse({ status: 201, type: ObraResponseDto })
+  @ApiResponse({ status: 201, description: 'Obra criada com sucesso', type: ObraResponseDto })
+  @ApiResponse({ status: 400, description: 'Dados inválidos', type: ErroDto })
+  @ApiResponse({ status: 404, description: 'Autor não encontrado', type: ErroDto })
+  @ApiResponse({ status: 409, description: 'Conflito de regra de negócio', type: ErroDto })
   async criar(@Body() dto: CriarObraDto): Promise<ObraResponseDto> {
-    return paraObraDto(await this.obrasService.criar(dto));
+    const obra = await this.obrasService.criar(dto);
+    return ObraResponseDto.de(obra);
   }
 
   @Get()
   @ApiOperation({ summary: 'Lista obras com paginação e filtros opcionais' })
-  @ApiResponse({ status: 200, type: ListaObrasResponseDto })
+  @ApiResponse({ status: 200, description: 'Lista paginada de obras', type: ListaObrasResponseDto })
+  @ApiResponse({ status: 400, description: 'Parâmetros de consulta inválidos', type: ErroDto })
   async listar(@Query() filtros: ListarObrasQueryDto): Promise<ListaObrasResponseDto> {
-    const { itens, total } = await this.obrasService.listar(filtros);
+    const pagina = filtros.pagina ?? 1;
+    const limite = filtros.limite ?? 20;
+    const { itens, total } = await this.obrasService.listar({
+      ...filtros,
+      pagina,
+      limite,
+    });
     return {
-      itens: itens.map(paraObraDto),
-      pagina: filtros.pagina,
-      limite: filtros.limite,
+      itens: itens.map((obra) => ObraResponseDto.de(obra)),
+      pagina,
+      limite,
       total,
-      totalPaginas: Math.ceil(total / filtros.limite),
+      totalPaginas: Math.ceil(total / limite),
     };
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Busca uma obra pelo id (com autor e exemplares)' })
-  @ApiResponse({ status: 200, type: ObraResponseDto })
-  @ApiResponse({ status: 404, description: 'Obra não encontrada' })
+  @ApiResponse({ status: 200, description: 'Obra encontrada', type: ObraResponseDto })
+  @ApiResponse({ status: 404, description: 'Obra não encontrada', type: ErroDto })
   async obterPorId(@Param('id', ParseUUIDPipe) id: string): Promise<ObraResponseDto> {
-    return paraObraDto(await this.obrasService.obterPorId(id));
+    const obra = await this.obrasService.obterPorId(id);
+    return ObraResponseDto.de(obra);
   }
 
   @Patch(':id')
   @ApiOperation({ summary: 'Atualiza uma obra' })
-  @ApiResponse({ status: 200, type: ObraResponseDto })
-  @ApiResponse({ status: 404, description: 'Obra não encontrada' })
+  @ApiResponse({ status: 200, description: 'Obra atualizada com sucesso', type: ObraResponseDto })
+  @ApiResponse({ status: 400, description: 'Dados inválidos', type: ErroDto })
+  @ApiResponse({ status: 404, description: 'Obra não encontrada', type: ErroDto })
+  @ApiResponse({ status: 409, description: 'Conflito de regra de negócio', type: ErroDto })
   async atualizar(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: AtualizarObraDto,
   ): Promise<ObraResponseDto> {
-    return paraObraDto(await this.obrasService.atualizar(id, dto));
+    const obra = await this.obrasService.atualizar(id, dto);
+    return ObraResponseDto.de(obra);
   }
 
   @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Remove uma obra' })
-  @ApiResponse({ status: 200, description: 'Obra removida' })
-  @ApiResponse({ status: 404, description: 'Obra não encontrada' })
-  async remover(@Param('id', ParseUUIDPipe) id: string): Promise<{ message: string }> {
+  @ApiResponse({ status: 204, description: 'Obra removida com sucesso' })
+  @ApiResponse({ status: 404, description: 'Obra não encontrada', type: ErroDto })
+  @ApiResponse({ status: 409, description: 'Conflito de regra de negócio', type: ErroDto })
+  async remover(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
     await this.obrasService.remover(id);
-    return { message: 'Obra removida com sucesso' };
   }
 
   /* =====================================================================

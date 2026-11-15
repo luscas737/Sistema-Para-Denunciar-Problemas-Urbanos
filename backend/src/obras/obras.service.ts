@@ -64,6 +64,8 @@ export class ObrasService {
   async listar(
     filtros: ListarObrasQueryDto,
   ): Promise<ResultadoListagemObras> {
+    const pagina = filtros.pagina ?? 1;
+    const limite = filtros.limite ?? 20;
     const where: FindOptionsWhere<Obra> = {};
 
     if (filtros.q) {
@@ -77,8 +79,8 @@ export class ObrasService {
       where,
       relations: ['autor'],
       order: { criadoEm: 'DESC' },
-      skip: (filtros.pagina - 1) * filtros.limite,
-      take: filtros.limite,
+      skip: (pagina - 1) * limite,
+      take: limite,
     });
 
     return { itens, total };
