@@ -1,12 +1,12 @@
 import {
   ArgumentsHost,
+  BadRequestException,
   Catch,
   ExceptionFilter,
   HttpException,
   HttpStatus,
   Logger,
 } from '@nestjs/common';
-import { ZodValidationException } from 'nestjs-zod';
 import { Response } from 'express';
 import { ErroDetalheDto } from '../dto/erro.dto';
 
@@ -34,15 +34,44 @@ export class HttpExceptionFilter implements ExceptionFilter {
   catch(excecao: unknown, host: ArgumentsHost): void {
     const resposta = host.switchToHttp().getResponse<Response>();
 
-    if (excecao instanceof ZodValidationException) {
-      const detalhes = excecao.getZodError().errors.map((erro) => ({
-        campo: erro.path.join('.') || '(corpo)',
-        mensagem: erro.message,
-      }));
+    // ValidationPipe (class-validator) lança BadRequestException com mensagem em array de ValidationError
+    if (excecao instanceof BadRequestException) {
+      const corpo = excecao.getResponse() as
+        | { message: string | unknown[] }
+        | string;
+      let mensagem = 'Dados inválidos';
+      let detalhes: ErroDetalheDto[] | undefined;
+
+      if (typeof corpo === 'object' && corpo !== null) {
+        const msg = corpo.message;
+        if (Array.isArray(msg)) {
+          mensagem = 'Dados inválidos';
+          detalhes = msg.map((item) => {
+            if (typeof item === 'string')
+              return { campo: '(geral)', mensagem: item };
+            const objeto = item as {
+              property?: string;
+              constraints?: Record<string, string>;
+              value?: unknown;
+            };
+            const campo = objeto.property ?? '(corpo)';
+            const constraints = objeto.constraints ?? {};
+            const msgTexto =
+              Object.values(constraints).join(', ') ||
+              (objeto.value !== undefined
+                ? `Valor inválido para ${campo}`
+                : String(item));
+            return { campo, mensagem: msgTexto };
+          });
+        } else if (typeof msg === 'string') {
+          mensagem = msg;
+        }
+      }
+
       this.responder(resposta, {
         statusCode: HttpStatus.BAD_REQUEST,
-        mensagem: 'Dados inválidos',
-        detalhes,
+        mensagem,
+        ...(detalhes ? { detalhes } : {}),
       });
       return;
     }
