@@ -1,0 +1,235 @@
+
+
+================================================================================
+1. 201 Created — POST /api/obras (criar obra com sucesso)
+================================================================================
+
+Comando:
+  curl -s -X POST http://localhost:3001/api/obras \
+    -H "Content-Type: application/json" \
+    -d '{"titulo":"Obra Teste Curl","anoPublicacao":2024,"autorId":"aaaaaaaa-0000-0000-0000-0001"}'
+
+Resultado:
+  {
+    "id":"de3632c1-f7b7-40d4-a624-7a56465e6e48",
+    "titulo":"Obra Teste Curl",
+    "isbn":null,
+    "anoPublicacao":2024,
+    "autorId":"aaaaaaaa-0000-0000-0000-0001",
+    "autor":null,
+    "criadoEm":"2026-11-15T13:02:31.000Z",
+    "atualizadoEm":"2026-11-15T13:02:31.000Z"
+  }
+  HTTP_STATUS: 201
+
+================================================================================
+2. 204 No Content — DELETE /api/obras/:id (remover obra com sucesso)
+================================================================================
+
+Comando:
+  curl -s -X DELETE http://localhost:3001/api/obras/<id-criado-acima>
+
+Resultado:
+  (corpo vazio)
+  HTTP_STATUS: 204
+
+
+================================================================================
+3. 400 Bad Request — POST /api/obras (dados de entrada invalidos)
+================================================================================
+
+Comando:
+  curl -s -X POST http://localhost:3001/api/obras \
+    -H "Content-Type: application/json" \
+    -d '{"titulo":"","anoPublicacao":3000,"autorId":"xyz"}'
+
+Resultado:
+  {
+    "statusCode":400,
+    "mensagem":"Dados invalidos",
+    "detalhes":[
+      {"campo":"(geral)","mensagem":"O titulo deve ter pelo menos 3 caracteres"},
+      {"campo":"(geral)","mensagem":"O ano de publicacao deve ser <= 2100"}
+    ]
+  }
+  HTTP_STATUS: 400
+
+================================================================================
+4. 400 Bad Request — POST /api/obras (mass assignment - campo nao declarado)
+================================================================================
+
+Comando:
+  curl -s -X POST http://localhost:3001/api/obras \
+    -H "Content-Type: application/json" \
+    -d '{"titulo":"X","destaque":true}'
+
+Resultado:
+  {
+    "statusCode":400,
+    "mensagem":"Dados invalidos",
+    "detalhes":[
+      {"campo":"(geral)","mensagem":"property destaque should not exist"},
+      {"campo":"(geral)","mensagem":"O titulo deve ter pelo menos 3 caracteres"},
+      {"campo":"(geral)","mensagem":"O ID do autor e obrigatorio"},
+      {"campo":"(geral)","mensagem":"O ID do autor deve ser uma string"}
+    ]
+  }
+  HTTP_STATUS: 400
+
+================================================================================
+5. 404 Not Found — GET /api/obras/:id (recurso inexistente)
+================================================================================
+
+Comando:
+  curl -s -X GET http://localhost:3001/api/obras/00000000-0000-0000-0000-000000000000
+
+Resultado:
+  {
+    "statusCode":404,
+    "mensagem":"Obra com id 00000000-0000-0000-0000-000000000000 nao encontrada."
+  }
+  HTTP_STATUS: 404
+
+================================================================================
+6. 201 Created — POST /api/exemplares (criar exemplar com sucesso)
+================================================================================
+
+Comando:
+  curl -s -X POST http://localhost:3001/api/exemplares \
+    -H "Content-Type: application/json" \
+    -d '{"tombo":"T-CURL-001","estado":"DISPONIVEL","obraId":"bbbbbbbb-0000-0000-0000-0036","dataAquisicao":"2026-01-15"}'
+
+Resultado:
+  {
+    "id":"fac403a1-d7aa-4255-be1e-7f66b1c849ba",
+    "tombo":"T-CURL-001",
+    "estado":"DISPONIVEL",
+    "obraTitulo":"Wuthering Heights",
+    "dataAquisicao":"2026-01-15T00:00:00.000Z",
+    "criadoEm":"2026-11-15T13:02:32.000Z",
+    "atualizadoEm":"2026-11-15T13:02:32.000Z"
+  }
+  HTTP_STATUS: 201
+
+================================================================================
+7. 400 Bad Request — POST /api/exemplares (tombo invalido - minusculas)
+================================================================================
+
+Comando:
+  curl -s -X POST http://localhost:3001/api/exemplares \
+    -H "Content-Type: application/json" \
+    -d '{"tombo":"t-abc","estado":"DISPONIVEL","obraId":"bbbbbbbb-0000-0000-0000-0036"}'
+
+Resultado:
+  {
+    "statusCode":400,
+    "mensagem":"Dados invalidos",
+    "detalhes":[
+      {"campo":"(geral)","mensagem":"O tombo deve conter apenas letras maiusculas, numeros e hifen"}
+    ]
+  }
+  HTTP_STATUS: 400
+
+
+================================================================================
+8. 400 Bad Request — POST /api/exemplares (data de aquisicao futura)
+================================================================================
+
+Comando:
+  curl -s -X POST http://localhost:3001/api/exemplares \
+    -H "Content-Type: application/json" \
+    -d '{"tombo":"T-FUTURE","estado":"DISPONIVEL","obraId":"bbbbbbbb-0000-0000-0000-0036","dataAquisicao":"2030-01-01"}'
+
+Resultado:
+  {
+    "statusCode":400,
+    "mensagem":"A data de aquisicao nao pode ser futura."
+  }
+  HTTP_STATUS: 400
+
+================================================================================
+9. 200 OK — GET /api/exemplares/:id (buscar exemplar por id)
+================================================================================
+
+Comando:
+  curl -s -X GET http://localhost:3001/api/exemplares/<id-criado-acima>
+
+Resultado:
+  {
+    "id":"c7664bce-d0a1-4295-b4f0-50fa2e2ffca7",
+    "tombo":"T-CURL-GET",
+    "estado":"DISPONIVEL",
+    "obraTitulo":"Wuthering Heights",
+    "dataAquisicao":null,
+    "criadoEm":"2026-11-15T13:02:32.000Z",
+    "atualizadoEm":"2026-11-15T13:02:32.000Z"
+  }
+  HTTP_STATUS: 200
+
+================================================================================
+10. 404 Not Found — GET /api/exemplares/:id (recurso inexistente)
+================================================================================
+
+Comando:
+  curl -s -X GET http://localhost:3001/api/exemplares/00000000-0000-0000-0000-000000000000
+
+Resultado:
+  {
+    "statusCode":404,
+    "mensagem":"Exemplar com id 00000000-0000-0000-0000-000000000000 nao encontrado."
+  }
+  HTTP_STATUS: 404
+
+================================================================================
+11. 409 Conflict — PATCH /api/exemplares/:id (reativar exemplar descartado)
+================================================================================
+
+Comando:
+  curl -s -X PATCH http://localhost:3001/api/exemplares/<id-descartado> \
+    -H "Content-Type: application/json" \
+    -d '{"estado":"DISPONIVEL"}'
+
+Resultado:
+  {
+    "statusCode":409,
+    "mensagem":"Exemplar T-DESC-CURL esta descartado e nao pode ser alterado para DISPONIVEL."
+  }
+  HTTP_STATUS: 409
+
+
+================================================================================
+12. E07.7 — GET /api/obras?limite=100000 (com @Max(100) ativo)
+================================================================================
+
+Comando:
+  curl -s "http://localhost:3001/api/obras?limite=100000"
+
+Resultado:
+  {
+    "statusCode":400,
+    "mensagem":"Dados invalidos",
+    "detalhes":[
+      {"campo":"(geral)","mensagem":"O limite maximo e 100 itens por pagina"}
+    ]
+  }
+  HTTP_STATUS: 400
+
+
+================================================================================
+RESUMO DE STATUS COBERTOS
+================================================================================
+
+| Status | Rota testada                              | Situacao                              |
+|--------|-------------------------------------------|---------------------------------------|
+| 201    | POST /api/obras                           | Criado com sucesso                    |
+| 201    | POST /api/exemplares                      | Criado com sucesso                    |
+| 204    | DELETE /api/obras/:id                     | Removido sem corpo                    |
+| 200    | GET /api/exemplares/:id                   | Recurso encontrado                    |
+| 400    | POST /api/obras                           | Titulo vazio / ano invalido           |
+| 400    | POST /api/obras                           | Campo nao declarado (mass assignment) |
+| 400    | POST /api/exemplares                      | Tombo com minusculas                  |
+| 400    | POST /api/exemplares                      | Data de aquisicao futura              |
+| 400    | GET /api/obras?limite=100000              | Limite excede teto de 100             |
+| 404    | GET /api/obras/:id (inexistente)          | Obra nao encontrada                   |
+| 404    | GET /api/exemplares/:id (inexistente)     | Exemplar nao encontrado               |
+| 409    | PATCH /api/exemplares/:id (descartado)    | Nao pode reativar descartado          |
