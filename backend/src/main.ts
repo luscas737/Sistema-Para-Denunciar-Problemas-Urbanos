@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { ZodValidationPipe, patchNestJsSwagger } from 'nestjs-zod';
+import { patchNestJsSwagger } from 'nestjs-zod';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { ErroDto } from './common/dto/erro.dto';
@@ -11,7 +12,14 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.setGlobalPrefix('api');
-  app.useGlobalPipes(new ZodValidationPipe());
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+      disableErrorMessages: false,
+    }),
+  );
   app.useGlobalFilters(new HttpExceptionFilter());
   app.enableCors();
 
