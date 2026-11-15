@@ -8,6 +8,7 @@ import { HistoricoStatusModule } from './historico-status/historico-status.modul
 import { SetoresModule } from './setores/setores.module';
 import { UsuariosModule } from './usuarios/usuarios.module';
 import { ObrasModule } from './obras/obras.module';
+import { ExemplaresModule } from './obras/exemplares.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { ObrasModule } from './obras/obras.module';
     HistoricoStatusModule,
     AnexosModule,
     ObrasModule,
+    ExemplaresModule,
   ],
 })
 export class AppModule {}
