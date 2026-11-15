@@ -7,6 +7,7 @@ import { EncaminhamentosModule } from './encaminhamentos/encaminhamentos.module'
 import { HistoricoStatusModule } from './historico-status/historico-status.module';
 import { SetoresModule } from './setores/setores.module';
 import { UsuariosModule } from './usuarios/usuarios.module';
+import { ObrasModule } from './obras/obras.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { UsuariosModule } from './usuarios/usuarios.module';
     EncaminhamentosModule,
     HistoricoStatusModule,
     AnexosModule,
+    ObrasModule,
   ],
 })
 export class AppModule {}
