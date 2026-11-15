@@ -33,6 +33,9 @@ export class Exemplar {
   @Column('varchar', { nullable: false })
   obraId: string;
 
+  @Column('datetime', { nullable: true })
+  dataAquisicao: Date | null;
+
   @ManyToOne(() => Obra, { nullable: false, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'obraId' })
   obra: Obra;
