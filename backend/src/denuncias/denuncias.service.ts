@@ -106,6 +106,7 @@ export class DenunciasService {
 
     const [itens, total] = await this.denuncias.findAndCount({
       where,
+      relations: ['categorias.categoria', 'setorAtual'],
       order: { criadoEm: 'DESC' },
       skip: (filtros.pagina - 1) * filtros.limite,
       take: filtros.limite,

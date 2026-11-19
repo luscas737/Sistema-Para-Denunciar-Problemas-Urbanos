@@ -17,7 +17,7 @@ export class Usuario {
   @Column('varchar', { length: 120 })
   nome: string;
 
-  @Column('varchar', { length: 160 })
+  @Column('varchar', { length: 160, unique: true })
   email: string;
 
   @Column('varchar', { length: 20, nullable: true })

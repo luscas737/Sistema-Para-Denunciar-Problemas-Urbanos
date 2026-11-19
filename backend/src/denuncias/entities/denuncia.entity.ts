@@ -2,16 +2,21 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { Setor } from '../../setores/setores.entity';
 import { Cidadao } from '../../usuarios/entities/cidadao.entity';
-import { CategoriaDenuncia, StatusDenuncia } from '../denuncia.enums';
+import { StatusDenuncia } from '../denuncia.enums';
+import { DenunciaCategoria } from './denuncia-categoria.entity';
 
 @Entity('denuncias')
+@Index(['categoria', 'status'])
+@Index(['setorAtualId', 'status'])
 export class Denuncia {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -23,7 +28,7 @@ export class Denuncia {
   descricao: string;
 
   @Column('varchar', { length: 20 })
-  categoria: CategoriaDenuncia;
+  categoria: string;
 
   @Column('real')
   latitude: number;
@@ -59,4 +64,7 @@ export class Denuncia {
 
   @UpdateDateColumn()
   atualizadoEm: Date;
+
+  @OneToMany(() => DenunciaCategoria, (dc) => dc.denuncia)
+  categorias: DenunciaCategoria[];
 }
