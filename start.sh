@@ -1,46 +1,133 @@
 #!/usr/bin/env bash
+###############################################################################
+# Sistema Para Denunciar Problemas Urbanos
+# Script de inicialização rápida (Linux / macOS)
+#
+# - Instala dependências do backend e frontend (se necessário)
+# - Cria o .env do frontend a partir do .env.example (se necessário)
+# - Executa as migrations do banco de dados
+# - Inicia o backend (API) em http://localhost:3001/api
+# - Inicia o frontend em http://localhost:3000
+# - Abre o navegador no frontend
+###############################################################################
 set -euo pipefail
-set -m
+
 cd "$(dirname "$0")"
 
+# --- Verificações iniciais ---------------------------------------------------
 if ! command -v npm >/dev/null 2>&1; then
-  echo "npm nao encontrado. Instale o Node.js 18 ou superior."
+  echo "ERRO: npm não encontrado. Instale o Node.js 18 ou superior."
   exit 1
 fi
 
-if [ ! -x backend/node_modules/.bin/nest ]; then
-  echo "Instalando dependencias do backend..."
-  (cd backend && npm install)
+if ! command -v curl >/dev/null 2>&1; then
+  echo "ERRO: curl não encontrado. Instale o curl para usar este script."
+  exit 1
 fi
 
-echo "Iniciando backend (API + Swagger) em http://localhost:3001/api ..."
-npm --prefix backend run start:dev &
-BACKEND_PID=$!
+echo "============================================================"
+echo "  Sistema Para Denunciar Problemas Urbanos"
+echo "============================================================"
+
+# --- Instala dependências ----------------------------------------------------
+if [ ! -d "backend/node_modules" ]; then
+  echo ""
+  echo "[1/4] Instalando dependências do backend..."
+  (cd backend && npm install)
+else
+  echo "[1/4] Dependências do backend já instaladas."
+fi
+
+if [ ! -d "frontend/node_modules" ]; then
+  echo "[2/4] Instalando dependências do frontend..."
+  (cd frontend && npm install)
+else
+  echo "[2/4] Dependências do frontend já instaladas."
+fi
+
+# --- Variáveis de ambiente do frontend ---------------------------------------
+if [ ! -f "frontend/.env" ]; then
+  echo "[3/4] Criando frontend/.env a partir do .env.example..."
+  cp frontend/.env.example frontend/.env
+else
+  echo "[3/4] frontend/.env já existe."
+fi
+
+# --- Migrations do banco -----------------------------------------------------
+echo "[4/4] Executando migrations do banco de dados..."
+(cd backend && npx typeorm-ts-node-commonjs migration:run -d src/database/data-source.ts 2>/dev/null || true)
+
+# --- Limpeza de processos ao sair --------------------------------------------
+BACKEND_PID=""
+FRONTEND_PID=""
 
 cleanup() {
-  kill -- "-$BACKEND_PID" 2>/dev/null || true
-  kill $BACKEND_PID 2>/dev/null || true
+  echo ""
+  echo "Encerrando processos..."
+  [ -n "$BACKEND_PID" ]   && kill "$BACKEND_PID"   2>/dev/null || true
+  [ -n "$FRONTEND_PID" ]  && kill "$FRONTEND_PID"  2>/dev/null || true
 }
-trap cleanup EXIT
+trap cleanup EXIT INT TERM
 
+# --- Inicia o backend --------------------------------------------------------
+echo ""
+echo "Iniciando backend (API) em http://localhost:3001/api ..."
+(cd backend && npm run start:dev) &
+BACKEND_PID=$!
+
+# --- Inicia o frontend -------------------------------------------------------
+echo "Iniciando frontend em http://localhost:3000 ..."
+(cd frontend && npm run dev) &
+FRONTEND_PID=$!
+
+# --- Aguarda o backend responder ---------------------------------------------
+echo ""
 echo "Aguardando o backend responder..."
 backend_ok=0
 for i in $(seq 1 60); do
-  if curl -sf -o /dev/null http://localhost:3001/api/denuncias; then
+  if curl -sf -o /dev/null http://localhost:3001/api/denuncias 2>/dev/null; then
     backend_ok=1
     break
   fi
   sleep 2
 done
 
-if [ "$backend_ok" -eq 0 ]; then
-  echo "O backend nao respondeu em http://localhost:3001/api."
-  echo "Verifique as mensagens de erro acima e, se necessario, rode: cd backend && npm install"
+if [ "$backend_ok" -eq 1 ]; then
+  echo "Backend online!"
+else
+  echo "AVISO: O backend não respondeu em http://localhost:3001/api."
+  echo "       Verifique a saída acima para erros."
 fi
 
-xdg-open http://localhost:3001/api/docs >/dev/null 2>&1 \
-  || open http://localhost:3001/api/docs >/dev/null 2>&1 \
-  || echo "Nao foi possivel abrir o navegador automaticamente. Acesse http://localhost:3001/api/docs"
+# --- Aguarda o frontend responder --------------------------------------------
+echo "Aguardando o frontend responder..."
+frontend_ok=0
+for i in $(seq 1 60); do
+  if curl -sf -o /dev/null http://localhost:3000 2>/dev/null; then
+    frontend_ok=1
+    break
+  fi
+  sleep 2
+done
 
-echo "Executando. Pressione Ctrl+C para encerrar o backend. Swagger: http://localhost:3001/api/docs"
+if [ "$frontend_ok" -eq 1 ]; then
+  echo "Frontend online!"
+else
+  echo "AVISO: O frontend não respondeu em http://localhost:3000."
+  echo "       Verifique a saída acima para erros."
+fi
+
+# --- Abre o navegador --------------------------------------------------------
+if [ "$frontend_ok" -eq 1 ]; then
+  xdg-open http://localhost:3000 >/dev/null 2>&1 \
+    || open http://localhost:3000 >/dev/null 2>&1 \
+    || echo "Não foi possível abrir o navegador automaticamente. Acesse: http://localhost:3000"
+else
+  echo "Acesse manualmente: http://localhost:3000 (frontend) e http://localhost:3001/api/docs (Swagger)"
+fi
+
+echo ""
+echo "============================================================"
+echo "  Em execução. Pressione Ctrl+C para encerrar tudo."
+echo "============================================================"
 wait
