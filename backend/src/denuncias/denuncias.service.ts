@@ -91,6 +91,10 @@ export class DenunciasService {
   }
 
   async listar(filtros: ListarDenunciasQueryDto): Promise<ResultadoListagem> {
+    // A validacao de query nao aplica defaults/coercao automaticamente, entao
+    // garantimos aqui para evitar "skip nao e um numero" quando os params nao sao enviados.
+    const pagina = Number(filtros.pagina) || 1;
+    const limite = Math.min(100, Number(filtros.limite) || 20);
     const base: FindOptionsWhere<Denuncia> = {};
     if (!filtros.arquivadas) base.arquivada = false;
     if (filtros.status) base.status = filtros.status;
@@ -108,8 +112,8 @@ export class DenunciasService {
       where,
       relations: ['categorias.categoria', 'setorAtual'],
       order: { criadoEm: 'DESC' },
-      skip: (filtros.pagina - 1) * filtros.limite,
-      take: filtros.limite,
+      skip: (pagina - 1) * limite,
+      take: limite,
     });
 
     return { itens, total };

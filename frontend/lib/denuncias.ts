@@ -93,3 +93,49 @@ export async function removerDenuncia(id: string): Promise<void> {
   const resposta = await fetch(`${API_URL}/denuncias/${id}`, { method: 'DELETE' });
   if (!resposta.ok) throw new Error('Falha ao remover denuncia');
 }
+
+export interface Anexo {
+  id: string;
+  denunciaId: string;
+  url: string;
+  tipo: 'imagem' | 'documento';
+  descricao: string | null;
+  enviadoPorId: string | null;
+  criadoEm: string;
+}
+
+export async function listarAnexos(denunciaId: string): Promise<Anexo[]> {
+  const resposta = await fetch(`${API_URL}/denuncias/${denunciaId}/anexos`, {
+    cache: 'no-store',
+  });
+  if (!resposta.ok) throw new Error('Falha ao carregar anexos');
+  return resposta.json();
+}
+
+export async function uploadAnexo(
+  denunciaId: string,
+  arquivo: File,
+  tipo: 'imagem' | 'documento' = 'imagem',
+  descricao?: string,
+): Promise<Anexo> {
+  const form = new FormData();
+  form.append('arquivo', arquivo);
+  form.append('tipo', tipo);
+  if (descricao) form.append('descricao', descricao);
+
+  const resposta = await fetch(`${API_URL}/denuncias/${denunciaId}/anexos/upload`, {
+    method: 'POST',
+    body: form,
+  });
+  if (!resposta.ok) throw new Error('Falha ao enviar anexo');
+  return resposta.json();
+}
+
+export async function removerAnexo(denunciaId: string, anexoId: string): Promise<Anexo> {
+  const resposta = await fetch(
+    `${API_URL}/denuncias/${denunciaId}/anexos/${anexoId}`,
+    { method: 'DELETE' },
+  );
+  if (!resposta.ok) throw new Error('Falha ao remover anexo');
+  return resposta.json();
+}

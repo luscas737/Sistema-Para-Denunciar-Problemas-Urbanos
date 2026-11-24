@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import {
+  Anexo,
   Denuncia,
   DenunciaFormData,
   atualizarDenuncia,
@@ -13,6 +14,7 @@ import {
   denunciaSchema,
   statusLista,
 } from '@/lib/denuncias';
+import AnexoUpload from './AnexoUpload';
 
 const MapaSelecao = dynamic(() => import('./MapaSelecao'), {
   ssr: false,
@@ -34,6 +36,8 @@ export default function DenunciaForm({ denuncia }: { denuncia?: Denuncia }) {
   });
   const [erros, setErros] = useState<Erros>({});
   const [salvando, setSalvando] = useState(false);
+  const [denunciaIdParaFotos, setDenunciaIdParaFotos] = useState<string | null>(null);
+  const [anexosConcluidos, setAnexosConcluidos] = useState<Anexo[]>([]);
 
   const latitudeNumero = Number(form.latitude);
   const longitudeNumero = Number(form.longitude);
@@ -97,13 +101,18 @@ export default function DenunciaForm({ denuncia }: { denuncia?: Denuncia }) {
         router.push(`/denuncias/${denuncia.id}`);
       } else {
         const criada = await criarDenuncia(dados);
-        router.push(`/denuncias/${criada.id}`);
+        setDenunciaIdParaFotos(criada.id);
       }
     } catch {
       setErros({ form: 'Nao foi possivel salvar a denuncia. Verifique se o backend esta em execucao.' });
     } finally {
       setSalvando(false);
     }
+  }
+
+  function lidarComAnexosConcluidos(anexos: Anexo[]) {
+    setAnexosConcluidos(anexos);
+    router.push(`/denuncias/${denunciaIdParaFotos}`);
   }
 
   const inputClasse = (campo: keyof DenunciaFormData) =>
@@ -220,10 +229,25 @@ export default function DenunciaForm({ denuncia }: { denuncia?: Denuncia }) {
 
       {erros.form && <p className="text-sm text-red-600">{erros.form}</p>}
 
+      {denunciaIdParaFotos && !denuncia && (
+        <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-4">
+          <h2 className="text-lg font-semibold">Anexar fotos</h2>
+          <p className="text-sm text-slate-600">
+            A denúncia foi cadastrada. Agora você pode anexar fotos do problema (selecionando arquivos
+            ou capturando com a câmera).
+          </p>
+          <AnexoUpload
+            denunciaId={denunciaIdParaFotos}
+            anexosExistentes={anexosConcluidos}
+            onConcluido={lidarComAnexosConcluidos}
+          />
+        </div>
+      )}
+
       <div className="flex gap-3">
         <button
           type="submit"
-          disabled={salvando}
+          disabled={salvando || !!denunciaIdParaFotos}
           className="bg-blue-600 text-white rounded-lg px-5 py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
         >
           {salvando ? 'Salvando...' : denuncia ? 'Salvar alteracoes' : 'Cadastrar denuncia'}

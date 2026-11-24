@@ -8,7 +8,10 @@ import {
   ParseUUIDPipe,
   Post,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiHeader, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { TiposPermitidos } from '../common/decorators/tipos-usuario.decorator';
 import { ErroDto } from '../common/dto/erro.dto';
@@ -21,6 +24,17 @@ import { TipoUsuario } from '../common/tipos-usuario';
 import { AnexoResponseDto, CriarAnexoDto } from './dto/anexo.dto';
 import { paraAnexoDto } from './anexos.mapper';
 import { AnexosService } from './anexos.service';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
+
+const storage = diskStorage({
+  destination: process.env.UPLOADS_DIR || 'uploads',
+  filename: (req, file, cb) => {
+    const unico = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    const extensao = extname(file.originalname);
+    cb(null, `${unico}${extensao}`);
+  },
+});
 
 @ApiTags('anexos')
 @ApiHeader({
@@ -35,9 +49,34 @@ import { AnexosService } from './anexos.service';
 })
 @UseGuards(TipoUsuarioGuard)
 @Controller('denuncias/:id/anexos')
-@ApiResponse({ status: 400, type: ErroDto, description: 'Dados inválidos (URL, tipo ou formato)' })
+@ApiResponse({ status: 400, type: ErroDto, description: 'Dados inválidos (arquivo, URL, tipo ou formato)' })
 export class AnexosController {
   constructor(private readonly service: AnexosService) {}
+
+  @Post('upload')
+  @TiposPermitidos(TipoUsuario.CIDADAO, TipoUsuario.ATENDENTE, TipoUsuario.ADMINISTRADOR)
+  @UseInterceptors(FileInterceptor('arquivo', { storage }))
+  @ApiOperation({
+    summary: 'Faz upload de um arquivo (foto/documento) para a denúncia',
+    description:
+      'Aceita imagem ou documento. O arquivo é salvo no servidor e disponibilizado em /uploads/<nome>.',
+  })
+  @ApiParam({ name: 'id', format: 'uuid', description: 'Id da denúncia' })
+  @ApiResponse({ status: 201, type: AnexoResponseDto, description: 'Anexo enviado com sucesso' })
+  @ApiResponse({ status: 404, type: ErroDto, description: 'Denúncia não encontrada' })
+  @ApiResponse({ status: 409, type: ErroDto, description: 'Limite de 5 anexos ou denúncia arquivada' })
+  async upload(
+    @Param('id', ParseUUIDPipe) id: string,
+    @UploadedFile() arquivo: Express.Multer.File,
+    @Body('tipo') tipo: 'imagem' | 'documento' = 'imagem',
+    @Body('descricao') descricao?: string,
+    @Headers(CABECALHO_USUARIO_ID) usuarioId?: string,
+  ): Promise<AnexoResponseDto> {
+    const url = `/uploads/${arquivo.filename}`;
+    return paraAnexoDto(
+      await this.service.criar(id, { url, tipo, descricao }, usuarioId || null),
+    );
+  }
 
   @Post()
   @TiposPermitidos(TipoUsuario.CIDADAO, TipoUsuario.ATENDENTE, TipoUsuario.ADMINISTRADOR)
